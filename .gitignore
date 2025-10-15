@@ -1,37 +1,66 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Virtual environments
+venv/
+.env/
+.envrc
+.venv/
 
-# testing
-/coverage
+# Environment variables
+*.env
 
-# next.js
-/.next/
-/out/
+# FastAPI static and temp files
+static/*.log
+static/*.tmp
 
-# production
-/build
+# SQLite and other DBs
+*.db
+*.sqlite
+*.sqlite3
 
-# misc
+# VSCode
+.vscode/
+
+# Mac and Linux system files
 .DS_Store
-*.pem
+Thumbs.db
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Coverage and test reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
 
-# local env files
-.env*.local
-.env
+# Mypy
+.mypy_cache/
 
-# vercel
-.vercel
+# Pytest
+.pytest_cache/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Pylint
+pylint-report.txt
+pylint-global.txt
+
+# FAISS vector stores
+vectorstores/
+
+# Data files
+data/
+!data/.gitkeep  # Keep folder, ignore contents
+
+# Uvicorn logs
+*.log
+
+# Resources
 /resources
+scope-requirements.md
+thoughtts.md

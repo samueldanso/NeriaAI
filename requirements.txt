@@ -1,0 +1,13 @@
+# NERIA AI - Production Dependencies
+# ETHOnline 2025 | ASI Alliance Track
+
+# Core Fetch.ai Framework
+uagents>=0.22.0
+python-dotenv>=1.0.0
+
+# Backend API
+fastapi>=0.115.0
+uvicorn>=0.30.0
+
+# HTTP Client (for ASI:One API)
+requests>=2.32.0
