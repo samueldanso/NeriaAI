@@ -1,10 +1,7 @@
 ---
 description: "Agentverse + uAgents (v0.22.9) and uAgents-core (v0.3.9) — Cursor rules to build correct Hosted, Local, and Mailbox agents with the Agent Chat Protocol, ExternalStorage, media workflows, tmp URL staging, and QuotaProtocol."
-globs:
-  - "**/*"
-alwaysApply: false
+alwaysApply: true
 ---
-
 # Agentverse + uAgents (v0.22.9) — Cursor .mdc Rules
 
 ## PURPOSE
