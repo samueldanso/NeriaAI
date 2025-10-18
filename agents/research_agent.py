@@ -199,7 +199,7 @@ def search_knowledge_capsules(query: str, top_k: int = TOP_K_CAPSULES) -> List[D
 def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[Dict[str, str]]:
     """
     Fallback to web search if Knowledge Capsules are insufficient.
-    Uses DuckDuckGo search API.
+    Uses multiple search strategies for better results.
     
     Args:
         query: Search query
@@ -209,10 +209,14 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
         List of web search results with title and snippet
     """
     if not ENABLE_WEB_SEARCH:
+        print("⚠️  Web search disabled. Set ENABLE_WEB_SEARCH=true in .env")
         return []
     
+    results = []
+    
+    # Strategy 1: Try DuckDuckGo Instant Answer API
     try:
-        # Use DuckDuckGo Instant Answer API
+        print(f"🔍 Searching DuckDuckGo for: {query}")
         url = "https://api.duckduckgo.com/"
         params = {
             'q': query,
@@ -221,11 +225,9 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
             'skip_disambig': 1
         }
         
-        response = requests.get(url, params=params, timeout=5)
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
-        
-        results = []
         
         # Extract abstract
         if data.get('Abstract'):
@@ -235,23 +237,57 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
                 'snippet': data.get('Abstract', ''),
                 'url': data.get('AbstractURL', '')
             })
+            print(f"  ✓ Found abstract: {data.get('Heading', 'Overview')}")
         
         # Extract related topics
-        for topic in data.get('RelatedTopics', [])[:max_results - 1]:
+        for topic in data.get('RelatedTopics', [])[:max_results]:
             if isinstance(topic, dict) and 'Text' in topic:
                 results.append({
-                    'source': 'DuckDuckGo',
+                    'source': 'DuckDuckGo Related',
                     'title': topic.get('Text', '')[:100],
                     'snippet': topic.get('Text', ''),
                     'url': topic.get('FirstURL', '')
                 })
         
-        print(f"✓ Web search found {len(results)} results")
-        return results[:max_results]
-        
+        if results:
+            print(f"  ✓ DuckDuckGo found {len(results)} results")
+            
     except Exception as e:
-        print(f"❌ Web search failed: {e}")
-        return []
+        print(f"  ⚠️  DuckDuckGo search failed: {e}")
+    
+    # Strategy 2: Try Wikipedia API if still no results
+    if len(results) < 2:
+        try:
+            print(f"🔍 Searching Wikipedia for: {query}")
+            wiki_url = "https://en.wikipedia.org/w/api.php"
+            wiki_params = {
+                'action': 'query',
+                'list': 'search',
+                'srsearch': query,
+                'format': 'json',
+                'srlimit': 3
+            }
+            
+            response = requests.get(wiki_url, params=wiki_params, timeout=10)
+            response.raise_for_status()
+            wiki_data = response.json()
+            
+            for item in wiki_data.get('query', {}).get('search', []):
+                results.append({
+                    'source': 'Wikipedia',
+                    'title': item.get('title', ''),
+                    'snippet': item.get('snippet', '').replace('<span class="searchmatch">', '').replace('</span>', ''),
+                    'url': f"https://en.wikipedia.org/wiki/{item.get('title', '').replace(' ', '_')}"
+                })
+            
+            if wiki_data.get('query', {}).get('search'):
+                print(f"  ✓ Wikipedia found {len(wiki_data['query']['search'])} results")
+                
+        except Exception as e:
+            print(f"  ⚠️  Wikipedia search failed: {e}")
+    
+    print(f"✓ Total web search results: {len(results)}")
+    return results[:max_results]
 
 
 def format_research_context(

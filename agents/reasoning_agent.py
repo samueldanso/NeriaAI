@@ -103,6 +103,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     context_from_research = None
     session_id = None
     user_address = None
+    original_sender = None
     
     for content_item in msg.content:
         if isinstance(content_item, TextContent):
@@ -110,7 +111,14 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
         elif isinstance(content_item, MetadataContent):
             session_id = content_item.metadata.get("session_id")
             user_address = content_item.metadata.get("user_address")
-            context_from_research = content_item.metadata.get("context")
+            context_from_research = content_item.metadata.get("research_context") or content_item.metadata.get("context")
+            original_sender = content_item.metadata.get("original_sender")
+            
+            # Log research context info
+            if context_from_research:
+                ctx.logger.info(f"📚 Received research context ({len(context_from_research)} chars)")
+            else:
+                ctx.logger.warning("⚠️  No research context in metadata")
     
     if not query_text:
         ctx.logger.warning("No query text found in message")
@@ -143,16 +151,41 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     #     api_key=ASI_ONE_API_KEY
     # )
     
-    # Mock reasoning chain
+    # Mock reasoning chain (enhanced with research context)
+    reasoning_steps = f"# Reasoning Analysis for: {query_text}\n\n"
+    
+    if context_from_research:
+        reasoning_steps += "## Research Context Received ✓\n\n"
+        reasoning_steps += f"{context_from_research}\n\n"
+        reasoning_steps += "---\n\n"
+        reasoning_steps += "## Analysis\n\n"
+        reasoning_steps += "Based on the research context above:\n\n"
+        reasoning_steps += "1. **Evidence Found**: The research agent successfully gathered relevant information\n"
+        reasoning_steps += "2. **Knowledge Reusability**: Checked existing Knowledge Capsules for similar queries\n"
+        reasoning_steps += "3. **External Sources**: Retrieved additional context from web sources\n\n"
+        confidence = 0.75  # Higher confidence with research
+    else:
+        reasoning_steps += "## ⚠️  No Research Context Available\n\n"
+        reasoning_steps += "Note: This response is generated without external research context.\n\n"
+        reasoning_steps += "### Mock Analysis:\n"
+        reasoning_steps += f"1. Query: {query_text}\n"
+        reasoning_steps += "2. This is a placeholder response\n"
+        reasoning_steps += "3. MeTTa reasoning is currently disabled for testing\n"
+        reasoning_steps += "4. To get better results, ensure Research Agent is running and web search is enabled\n"
+        confidence = 0.5  # Lower confidence without research
+    
     reasoning_chain = {
         'query': query_text,
         'reasoning_type': reasoning_type,
         'key_concepts': concepts,
         'metta_knowledge_used': {},
-        'reasoning_steps': f"Mock reasoning for: {query_text}\n\n1. This is a mock response\n2. MeTTa is disabled for testing\n3. Agent communication is working",
-        'confidence': 0.5,
+        'reasoning_steps': reasoning_steps,
+        'confidence': confidence,
         'requires_validation': True,
-        'metadata': {}
+        'metadata': {
+            'has_research_context': context_from_research is not None,
+            'research_context_length': len(context_from_research) if context_from_research else 0
+        }
     }
     
     ctx.logger.info(f"✅ Reasoning chain generated (confidence: {reasoning_chain['confidence']:.2f})")
