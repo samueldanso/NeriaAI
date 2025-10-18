@@ -1,47 +1,8 @@
-# NERIA Multi-Agent System
+# Agent Documentation
 
 This system comprises a modular architecture where a central **Query Router Agent** delegates tasks to several **specialized agents** based on the nature of a user query. Each agent is built using the `uAgents` framework and communicates using a standardized **Chat Protocol**. The system uses **MeTTa** for structured reasoning and **ASI:One** for human expert validation to create verified Knowledge Capsules.
 
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-```bash
-pip install -r ../requirements.txt
-```
-
-### 2. Configure Agent Addresses
-Copy `env.template` to `.env` and verify the agent addresses are correct:
-
-```env
-RESEARCH_AGENT_ADDRESS=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm
-REASONING_AGENT_ADDRESS=agent1qgfphu7jw45my7a3c0qpmnuvrf3e50fqkvyvst7mh8lvsuhv5n92zqwmeuz
-VALIDATION_AGENT_ADDRESS=agent1qv64keg2jx4gsrsgk4s8r8q5pjahmaq4dpsa0whge0l3zf4glkzxw89wacm
-CAPSULE_AGENT_ADDRESS=agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246
-```
-
-### 3. Start Agents (in separate terminals)
-```bash
-# Terminal 1 - Query Router
-python query_router_agent.py
-
-# Terminal 2 - Research Agent
-python research_agent.py
-
-# Terminal 3 - Reasoning Agent (MeTTa currently disabled for testing)
-python reasoning_agent.py
-
-# Terminal 4 - Validation Agent
-python validation_agent.py
-
-# Terminal 5 - Capsule Agent
-python capsule_agent.py
-```
-
-See [AGENT_ADDRESSES.md](./AGENT_ADDRESSES.md) for complete address configuration.
-
 ---
-
-## 📋 Agent Architecture
 
 ## Query Router Agent (Main Agent)
 
@@ -70,47 +31,5 @@ The **Validation Agent** is designed for coordinating human expert validation vi
 ## Capsule Agent (Specialized Agent)
 
 The **Capsule Agent** serves as the knowledge storage and retrieval system for verified Knowledge Capsules. When it receives a validated reasoning chain from the Validation Agent, it creates a comprehensive Knowledge Capsule with metadata including the original query, reasoning chain, validation proof, and usage statistics. The capsule is stored in JSON format in `/data/capsules/` and indexed using FAISS for semantic search. The agent also handles capsule retrieval for future queries, ensuring that verified knowledge can be reused and built upon. This agent maintains the integrity of the knowledge base and provides fast access to previously validated reasoning chains.
-
----
-
-## 🔗 Communication Flow
-
-```
-User Query
-    ↓
-Query Router Agent (Port 9000)
-    ↓
-    ├─→ Research Agent (Port 9002)
-    │       ↓
-    │   [FAISS Search + Web Fallback]
-    │       ↓
-    ├─→ Reasoning Agent (Port 9001)
-    │       ↓
-    │   [MeTTa Logic Chains - Currently Mock Mode]
-    │       ↓
-    ├─→ Validation Agent (Port 9003)
-    │       ↓
-    │   [Human Expert Review via ASI:One]
-    │       ↓
-    └─→ Capsule Agent (Port 9004)
-            ↓
-        [Storage + FAISS Indexing]
-```
-
-## 📊 Agent Status
-
-| Agent | Port | Status | Features |
-|-------|------|--------|----------|
-| Query Router | 9000 | ✅ Ready | ASI:One classification, routing |
-| Research | 9002 | ✅ Ready | FAISS search, web fallback |
-| Reasoning | 9001 | ⚠️ Mock Mode | MeTTa disabled for testing |
-| Validation | 9003 | ✅ Ready | ASI:One integration, auto-approve |
-| Capsule | 9004 | ✅ Ready | Storage, FAISS indexing |
-
-## 📝 Notes
-
-- **MeTTa Reasoning**: Currently disabled in Reasoning Agent for testing. Uncomment MeTTa imports to enable.
-- **FAISS**: Optional but recommended for semantic search. System works in mock mode without it.
-- **ASI:One API**: Optional for testing. Agents use mock validation when API key not configured.
 
 ---
