@@ -69,6 +69,10 @@ chat = Protocol(spec=chat_protocol_spec)
 # Session tracking for multi-agent workflows
 active_sessions: Dict[str, Dict[str, Any]] = {}
 
+# Track which user is waiting for response from which agent
+# Format: {specialized_agent_address: user_address}
+agent_to_user_mapping: Dict[str, str] = {}
+
 # Helper functions
 def create_text_message(text: str, metadata: Optional[Dict[str, str]] = None) -> ChatMessage:
     """Create a ChatMessage with TextContent."""
@@ -192,6 +196,9 @@ async def route_to_agent(
         ctx.logger.info(f"📚 Routing simple factual query to Research Agent: {target_address}")
         
         if target_address:
+            # Track this routing for response forwarding
+            agent_to_user_mapping[target_address] = user_address
+            
             await ctx.send(
                 target_address,
                 create_text_message(query, metadata=routing_metadata)
@@ -209,6 +216,9 @@ async def route_to_agent(
         ctx.logger.info(f"🧠 Routing complex reasoning query to Reasoning Agent: {target_address}")
         
         if target_address:
+            # Track this routing for response forwarding
+            agent_to_user_mapping[target_address] = user_address
+            
             await ctx.send(
                 target_address,
                 create_text_message(query, metadata=routing_metadata)
@@ -226,6 +236,9 @@ async def route_to_agent(
         ctx.logger.info(f"✅ Routing validation request to Validation Agent: {target_address}")
         
         if target_address:
+            # Track this routing for response forwarding
+            agent_to_user_mapping[target_address] = user_address
+            
             await ctx.send(
                 target_address,
                 create_text_message(query, metadata=routing_metadata)
@@ -243,6 +256,9 @@ async def route_to_agent(
         ctx.logger.info(f"💊 Routing capsule lookup to Capsule Agent: {target_address}")
         
         if target_address:
+            # Track this routing for response forwarding
+            agent_to_user_mapping[target_address] = user_address
+            
             await ctx.send(
                 target_address,
                 create_text_message(query, metadata=routing_metadata)
@@ -305,10 +321,10 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             if sender in active_sessions:
                 del active_sessions[sender]
         
-        # Handle text content (user query)
+        # Handle text content (user query or agent response)
         elif isinstance(content_item, TextContent):
             query_text = content_item.text
-            ctx.logger.info(f"📝 Query: {query_text}")
+            ctx.logger.info(f"📝 Message: {query_text[:100]}...")
             
             # Check if this is a response from a specialized agent
             is_agent_response = any(
@@ -317,22 +333,26 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             )
             
             if is_agent_response:
-                # This is a response from a specialized agent
-                ctx.logger.info(f"✅ Received response from specialized agent")
+                # This is a response from a specialized agent - forward to original user
+                ctx.logger.info(f"✅ Received response from specialized agent: {sender[:20]}...")
                 
-                # Find the original user to forward the response
-                session_id = None
-                for content in msg.content:
-                    if isinstance(content, MetadataContent):
-                        session_id = content.metadata.get("session_id")
-                        break
+                # Look up the user who sent the original query to this agent
+                user_address = agent_to_user_mapping.get(sender)
                 
-                if session_id and session_id in active_sessions:
-                    user_address = active_sessions[session_id]["user_address"]
+                if user_address:
+                    ctx.logger.info(f"📤 Forwarding response to user: {user_address[:20]}...")
+                    
+                    # Forward the entire message to the user
                     await ctx.send(user_address, msg)
-                    ctx.logger.info(f"📤 Forwarded response to user: {user_address}")
+                    
+                    ctx.logger.info(f"✓ Response forwarded to user successfully")
+                    
+                    # Clean up the mapping after forwarding (optional - keeps mapping clean)
+                    # Comment out if you want to allow multiple responses from same agent
+                    # del agent_to_user_mapping[sender]
                 else:
-                    ctx.logger.warning("Could not find original user for response")
+                    ctx.logger.warning(f"⚠️  Could not find original user for agent response from {sender[:20]}...")
+                    ctx.logger.warning(f"   Current mappings: {len(agent_to_user_mapping)} active")
             
             else:
                 # This is a new query from a user
@@ -343,6 +363,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }
                 
+                ctx.logger.info(f"🆕 New query from user: {sender[:20]}...")
+                
                 # Classify the query
                 ctx.logger.info("🔍 Classifying query...")
                 query_type = await classify_query_with_asi_one(query_text, ctx)
@@ -352,8 +374,9 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 await ctx.send(
                     sender,
                     create_text_message(
-                        f"Query classified as: {query_type.value.replace('_', ' ').title()}\n"
-                        f"Routing to appropriate agent..."
+                        f"✅ Query classified as: {query_type.value.replace('_', ' ').title()}\n"
+                        f"🔄 Routing to appropriate agent...\n"
+                        f"⏳ Please wait for the response..."
                     )
                 )
                 
@@ -417,8 +440,9 @@ async def shutdown_handler(ctx: Context):
     """Cleanup on shutdown."""
     ctx.logger.info("🛑 Query Router Agent shutting down...")
     
-    # Clean up active sessions
+    # Clean up active sessions and mappings
     active_sessions.clear()
+    agent_to_user_mapping.clear()
     
     ctx.logger.info("👋 Goodbye!")
 
