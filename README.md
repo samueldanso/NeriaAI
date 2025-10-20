@@ -171,11 +171,11 @@ USER RECEIVES:
 ## 🤖 Agent Addresses (Innovation Lab)
 
 ```
--   QUERY ROUTER AGENT=""
--   RESEARCH AGENT=""
--   REASONING AGENT=""
--   VALIDATION AGENT=""
--   CAPSULE AGENT=""
+-   QUERY ROUTER AGENT="agent1qwh5h2rcqy90hsa7cw4nx7zz2rt28dw7yrs234pgg7dyq8l0c9ykjy87hzu"
+-   RESEARCH AGENT="agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm"
+-   REASONING AGENT="agent1qgfphu7jw45my7a3c0qpmnuvrf3e50fqkvyvst7mh8lvsuhv5n92zqwmeuz"
+-   VALIDATION AGENT="agent1qv64keg2jx4gsrsgk4s8r8q5pjahmaq4dpsa0whge0l3zf4glkzxw89wacm"
+-   CAPSULE AGENT="agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246"
 ```
 
 🧩 Use Cases
@@ -293,7 +293,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **By NeriaAI Team**
 
 -   **Samuel Danso - Product & Enginrering Lead** – `me.samueldanso@gmail.com`
--   **Emmanuel Ameyaw — Backend & AI Engineering** -`emmanuelameyaw57@gmail.com`
+-   **Emmanuel Ameyaw — Backend & AI Engineering** -`emmanuel97ameyaw@gmail.com`
 
 ## 🔗 Links
 
