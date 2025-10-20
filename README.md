@@ -1,43 +1,24 @@
 ![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
 ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
 
-# Neria AI — Turning AI Answers into Trusted, Expert-Validated Knowledge
+# Neria AI — Turning AI outputs into trusted, expert-validated knowledge
 
 **ETHOnline 2025 | ASI Alliance Track**
 
-[![Watch Video Demo ]()]()
+[Watch Video Demo ]()
 
 [Final Pitch Deck]()
 
 ## 🎯 Overview
 
-Neria is an AI-powered reasoning engine that transforms complex questions into expert-validated answers you can actually trust and reuse — think “StackOverflow for AI.”
+Neria is a decentralized, human-AI reasoning platform for knowledge work that transforms fragmented AI outputs into trusted, expert-validated, and reusable structured knowledge.
+It leverages a multi-agent reasoning system powered by uAgents, ASI:One’s human validation network, and MeTTa’s structured logic to create verifiable Knowledge Capsules.
 
-It’s built for developers, researchers, and professionals who rely on AI but need accuracy, validation, and structured reasoning — not guesswork.
+Experts and AI agents collaboratively reason, verify, and structure complex answers into high-quality knowledge assets. Each contribution is verifiable and reputation-backed, ensuring transparency and trust.
 
-Neria uses a multi-agent system powered by uAgents and MeTTa, with human validation via ASI:One, to turn fragmented AI responses into structured, reusable Knowledge Capsules that you can cite or build upon.
+**Think Stack Overflow for the AI era** — where human expertise and autonomous AI agents co-create reliable, reusable knowledge for critical decision-making and research.
 
-## 🌪️ The Problem
-
-Today, when you search or ask AI a technical or complex question:
-
-❌ AI gives confident but unverified answers
-
-❌ Forums like StackOverflow or Quora have outdated or conflicting responses
-
-❌ Hard to cite or trust for real work
-
-❌ Valuable knowledge gets lost instead of being reusable
-
-**Result**: Professionals waste time verifying AI outputs manually — the opposite of AI’s promise
-
-## 💡 The Solution — Expert-Validated Answers
-
-Neria introduces an agentic validation layer that combines specialized autonomous reasoning agents with real human experts via ASI:One, ensuring every AI-generated insight is validated, structured, and reusable.
-
-Using uAgents, MeTTa, and ASI:One, Neria AI creates verified “Knowledge Capsules” — a modular, searchable, and citable reasoning units.
-
-**Think StackOverflow meets AI — verified, reusable, and decentralized.**
+Built for researchers, analysts, developers, and professionals who rely on AI outputs but need accuracy, validation, and structured reasoning — not guesswork.
 
 ## 🌐 Key Features
 
@@ -53,7 +34,9 @@ Using uAgents, MeTTa, and ASI:One, Neria AI creates verified “Knowledge Capsul
 
 -   💬 **Realtime Human-Agent Interaction** – Chat protocol for expert review.
 
--   ✅ Trust Layer for AI – Every answer carries validation metadata and history.
+-   🏅 Reputation & Attestations – Expert validations generate on-chain reputation proofs for transparent, trustless credibility.
+
+-   🔐 Web3 Identity – Wallet login for contributors, ensuring verifiable ownership of expertise.
 
 ## 🧭 Multi-Agent Workflow & Architecture
 
@@ -218,6 +201,9 @@ USER RECEIVES:
 -   **Vector Storage and Retrieval**: FAISS
 -   **Backend API**: FastAPI
 -   **Frontend**: Next.js, React, TypesScript, Tailwind,Shadcn UI
+-   **Smart Contracts**: Solidity, Hardhat
+
+-   ** Web3 Identity & Reputation Integration**: Privy, Viem, Wagmi
 
 ## 🚀 Getting Started
 
@@ -296,7 +282,7 @@ Next Steps
 -   [] Expert validation marketplace
 -   [] Cross-domain knowledge graphs
 -   [] Capsule graph visualization
--   [] Decentralized reputation layer
+-   [] Attestation-based Trust & Incentive System
 
 ## 📄 License
 
