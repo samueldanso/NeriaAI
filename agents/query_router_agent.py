@@ -289,7 +289,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             welcome_msg = create_text_message(
                 "Welcome to NeriaMind! I can help you with:\n"
                 "• Factual queries (Research)\n"
-                "• Complex reasoning (MeTTa logic chains)\n"
+                "• Complex reasoning (Detail and Complex )\n"
                 "• Knowledge validation (Human experts)\n"
                 "• Capsule lookup (Verified knowledge)\n\n"
                 "How can I assist you today?",

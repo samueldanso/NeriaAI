@@ -212,6 +212,13 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
         print("⚠️  Web search disabled. Set ENABLE_WEB_SEARCH=true in .env")
         return []
     
+    # Proper headers to avoid 403 errors
+    headers = {
+        'User-Agent': 'NeriaAI Research Agent/1.0 (Educational Purpose; https://github.com/neria-ai)',
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    
     results = []
     
     # Strategy 1: Try DuckDuckGo Instant Answer API
@@ -225,7 +232,7 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
             'skip_disambig': 1
         }
         
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
         
@@ -268,7 +275,7 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
                 'srlimit': 3
             }
             
-            response = requests.get(wiki_url, params=wiki_params, timeout=10)
+            response = requests.get(wiki_url, params=wiki_params, headers=headers, timeout=10)
             response.raise_for_status()
             wiki_data = response.json()
             
