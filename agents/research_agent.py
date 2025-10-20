@@ -442,34 +442,36 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     ctx.logger.info("📝 Formatting research context...")
     research_context = format_research_context(query_text, capsules, web_results)
     
-    # Step 4: Decide next step
-    if REASONING_AGENT_ADDRESS:
-        # Forward to Reasoning Agent with context
-        ctx.logger.info("📤 Forwarding to Reasoning Agent with context...")
+    # Step 4: Always send results back to the original sender (user/agent who asked)
+    ctx.logger.info("📤 Sending research results to sender...")
+    await ctx.send(sender, create_text_message(research_context))
+    ctx.logger.info("✓ Research results sent to sender")
+    
+    # Step 5: Optionally also notify Reasoning Agent (if configured and sender is not the reasoning agent)
+    if REASONING_AGENT_ADDRESS and sender != REASONING_AGENT_ADDRESS:
+        ctx.logger.info("📤 Also notifying Reasoning Agent for knowledge tracking...")
         
-        await ctx.send(
-            REASONING_AGENT_ADDRESS,
-            ChatMessage(
-                timestamp=datetime.now(timezone.utc),
-                msg_id=uuid4(),
-                content=[
-                    TextContent(type="text", text=query_text),
-                    MetadataContent(type="metadata", metadata={
-                        "research_context": research_context,
-                        "capsules_found": str(len(capsules)),
-                        "web_results_found": str(len(web_results)),
-                        "original_sender": sender
-                    })
-                ]
+        try:
+            await ctx.send(
+                REASONING_AGENT_ADDRESS,
+                ChatMessage(
+                    timestamp=datetime.now(timezone.utc),
+                    msg_id=uuid4(),
+                    content=[
+                        TextContent(type="text", text=query_text),
+                        MetadataContent(type="metadata", metadata={
+                            "research_context": research_context,
+                            "capsules_found": str(len(capsules)),
+                            "web_results_found": str(len(web_results)),
+                            "original_sender": sender,
+                            "notification_only": "true"
+                        })
+                    ]
+                )
             )
-        )
-        ctx.logger.info("✓ Research context forwarded to Reasoning Agent")
-        
-    else:
-        # Send research context back to sender
-        ctx.logger.info("📤 Sending research context to sender...")
-        await ctx.send(sender, create_text_message(research_context))
-        ctx.logger.info("✓ Research context sent")
+            ctx.logger.info("✓ Reasoning Agent notified")
+        except Exception as e:
+            ctx.logger.warning(f"⚠️  Failed to notify reasoning agent: {e}")
 
 
 @chat.on_message(ChatAcknowledgement)
