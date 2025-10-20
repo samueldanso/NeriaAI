@@ -253,15 +253,15 @@ python agents/validation_agent.py
 python agents/capsule_agent.py
 ```
 
-### update the address of each of the above agents in the intent_classifier.py file
+### update the address of each of the above agents with their individual agent address from agentverse
 
 ```python
 # Replace these with the actual addresses printed by each worker agent at startup
-QUERY_ROUTER_AGENT_ADDR = ""
-RESEARCH_AGENT_ADDR = ""
-REASONING_AGENT_ADDR = ""
-VALIDATION_AGENT_ADDR = ""
-CAPSULE_AGENT_ADDR = ""
+QUERY_ROUTER_AGENT_ADDR = "agent1qwh5h2rcqy90hsa7cw4nx7zz2rt28dw7yrs234pgg7dyq8l0c9ykjy87hzu"
+RESEARCH_AGENT_ADDR = "agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm"
+REASONING_AGENT_ADDR = "agent1qgfphu7jw45my7a3c0qpmnuvrf3e50fqkvyvst7mh8lvsuhv5n92zqwmeuz"
+VALIDATION_AGENT_ADDR = "agent1qv64keg2jx4gsrsgk4s8r8q5pjahmaq4dpsa0whge0l3zf4glkzxw89wacm"
+CAPSULE_AGENT_ADDR = " agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246"
 
 ```
 
