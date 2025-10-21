@@ -2,7 +2,8 @@
 # ETHOnline 2025 | ASI Alliance Track
 
 # Core Fetch.ai Framework
-uagents>=0.22.0
+uagents>=0.22.9
+uagents-core>=0.3.9
 python-dotenv>=1.0.0
 
 # Backend API
@@ -11,3 +12,16 @@ uvicorn>=0.30.0
 
 # HTTP Client (for ASI:One API)
 requests>=2.32.0
+
+# Data Models
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Vector Search & Embeddings (Research Agent)
+numpy>=1.24.0
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.0
+
+# MeTTa Reasoning Engine (optional - complex build requirements)
+# hyperon @ git+https://github.com/trueagi-io/hyperon-experimental.git#subdirectory=python
+
