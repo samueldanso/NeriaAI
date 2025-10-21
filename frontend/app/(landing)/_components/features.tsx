@@ -100,7 +100,10 @@ const ReasoningIllustration = () => {
             </span>
           </div>
 
-          <Button size="sm" className="h-7 rounded-full bg-black text-xs">
+          <Button
+            size="sm"
+            className="h-7 rounded-full bg-foreground text-primary-foreground text-xs"
+          >
             <ArrowUp className="size-3" strokeWidth={3} />
             View Capsule
           </Button>

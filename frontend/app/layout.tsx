@@ -81,7 +81,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${garnett.variable} antialiased bg-[#F9EFE4]`}>
+      <body className={`${garnett.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>
