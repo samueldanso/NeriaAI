@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ThemeToggle } from "./theme-toggle";
-import { WalletConnect } from "./wallet-connect";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { WalletConnect } from "@/components/wallet-connect";
 
 export default function Header() {
   return (
