@@ -41,12 +41,12 @@ try:
         format_reasoning_for_validation
     )
     METTA_AVAILABLE = True
-    
+
 except ImportError as e:
     error_msg = str(e)
     if "hyperon" in error_msg.lower() and platform.system() == "Windows":
         print("⚠️  Run on Ubuntu for MeTTa: cd /mnt/c/Users/PC/NERIA/NeriaAI/agents && python3 reasoning_agent.py")
-    
+
     METTA_AVAILABLE = False
     MeTTa = None
 
@@ -90,7 +90,7 @@ def create_text_message(text: str, metadata: Optional[Dict[str, str]] = None) ->
     content = [TextContent(type="text", text=text)]
     if metadata:
         content.append(MetadataContent(type="metadata", metadata=metadata))
-    
+
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
         msg_id=uuid4(),
@@ -101,7 +101,7 @@ def create_text_message(text: str, metadata: Optional[Dict[str, str]] = None) ->
 @chat.on_message(ChatMessage)
 async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     """Handle incoming ChatMessage from Query Router or Research Agent."""
-    
+
     # Send acknowledgement first
     await ctx.send(
         sender,
@@ -110,18 +110,18 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             acknowledged_msg_id=msg.msg_id
         )
     )
-    
+
     # Ignore messages from validation agent (prevent loop)
     if sender == VALIDATION_AGENT_ADDRESS:
         return
-    
+
     # Extract query and metadata
     query_text = None
     context_from_research = None
     session_id = None
     user_address = None
     original_sender = None
-    
+
     for content_item in msg.content:
         if isinstance(content_item, TextContent):
             query_text = content_item.text
@@ -130,24 +130,24 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             user_address = content_item.metadata.get("user_address")
             context_from_research = content_item.metadata.get("research_context") or content_item.metadata.get("context")
             original_sender = content_item.metadata.get("original_sender")
-    
+
     if not query_text:
         ctx.logger.warning("No query text")
         return
-    
+
     ctx.logger.info(f"Processing: {query_text[:50]}...")
-    
+
     # Check if MeTTa is available
     if METTA_AVAILABLE and reasoning_rag:
         # MeTTa reasoning enabled - classify, extract concepts, generate chain
         ctx.logger.info("🧠 Using MeTTa Knowledge Graph...")
-        
+
         reasoning_type = classify_reasoning_type(query_text, ASI_ONE_API_KEY)
         ctx.logger.info(f"  • Reasoning Type: {reasoning_type}")
-        
+
         concepts = extract_key_concepts(query_text, ASI_ONE_API_KEY)
         ctx.logger.info(f"  • Key Concepts: {', '.join(concepts)}")
-        
+
         # Query MeTTa knowledge for relevant patterns
         ctx.logger.info("  • Querying MeTTa knowledge graph...")
         patterns = reasoning_rag.query_reasoning_pattern(reasoning_type)
@@ -155,7 +155,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             ctx.logger.info(f"    ✓ Found {len(patterns)} reasoning pattern(s)")
             for i, pattern in enumerate(patterns[:3], 1):  # Show first 3
                 ctx.logger.info(f"      [{i}] {pattern[:80]}...")
-        
+
         # Query domain-specific knowledge
         domain_knowledge = []
         for concept in concepts[:3]:  # Show first 3 concepts
@@ -165,7 +165,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 ctx.logger.info(f"    ✓ Domain knowledge for '{concept}': {len(rules)} rule(s)")
                 for rule in rules[:2]:  # Show first 2 rules
                     ctx.logger.info(f"      → {rule[:80]}...")
-        
+
         reasoning_chain = generate_reasoning_chain(
             query=query_text,
             reasoning_type=reasoning_type,
@@ -174,7 +174,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             context=context_from_research,
             api_key=ASI_ONE_API_KEY
         )
-        
+
         ctx.logger.info(f"  ✓ MeTTa-enhanced reasoning generated (conf: {reasoning_chain.get('confidence', 0):.2f})")
     else:
         # Fallback mode (no MeTTa) - simple reasoning
@@ -184,16 +184,16 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             reasoning_type = "comparative"
         elif any(word in query_lower for word in ["explain", "how", "process"]):
             reasoning_type = "deductive"
-        
+
         words = query_text.split()
         concepts = [w.strip(".,!?()[]{}\"'") for w in words if len(w) > 4][:5]
         if not concepts:
             concepts = ["reasoning", "query", "processing"]
-        
+
         # Fallback reasoning chain (enhanced with research context)
         reasoning_steps = f"# Reasoning Analysis for: {query_text}\n\n"
         reasoning_steps += f"**⚠️ MeTTa Reasoning Engine Not Available**\n\n"
-        
+
         if context_from_research:
             reasoning_steps += "## Research Context Received ✓\n\n"
             reasoning_steps += f"{context_from_research}\n\n"
@@ -220,7 +220,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             reasoning_steps += "2. Ensure Research Agent is running\n"
             reasoning_steps += "3. Enable web search in configuration\n"
             confidence = 0.4  # Lower confidence without both
-        
+
         reasoning_chain = {
             'query': query_text,
             'reasoning_type': reasoning_type,
@@ -235,9 +235,9 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 'metta_available': False
             }
         }
-    
+
     ctx.logger.info(f"Generated chain (conf: {reasoning_chain['confidence']:.2f})")
-    
+
     # Step 4: Store session for validation tracking
     if session_id:
         active_sessions[session_id] = {
@@ -246,11 +246,11 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             "user_address": user_address,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-    
+
     # Step 5: Decide if validation is needed
     if reasoning_chain['requires_validation'] and VALIDATION_AGENT_ADDRESS:
         ctx.logger.info("Forwarding to validation...")
-        
+
         # Format for validation
         if METTA_AVAILABLE:
             validation_text = format_reasoning_for_validation(reasoning_chain)
@@ -276,7 +276,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 **Confidence Score:** {reasoning_chain['confidence']:.2f}
 **Note:** Install MeTTa for enhanced reasoning capabilities
 """
-        
+
         # Forward to Validation Agent
         # Build metadata, filtering out None values
         validation_metadata = {
@@ -287,12 +287,12 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             validation_metadata["session_id"] = session_id
         if user_address:
             validation_metadata["user_address"] = user_address
-        
+
         await ctx.send(
             VALIDATION_AGENT_ADDRESS,
             create_text_message(validation_text, metadata=validation_metadata)
         )
-        
+
         # Notify user
         if user_address:
             await ctx.send(
@@ -307,7 +307,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     else:
         # High confidence - return directly to user
         ctx.logger.info("High confidence - validated")
-        
+
         response_text = f"""
 🧠 **REASONING CHAIN** (Confidence: {reasoning_chain['confidence']:.2f})
 
@@ -322,13 +322,13 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 ---
 ✅ **Status:** High confidence - validated by MeTTa knowledge graph
         """.strip()
-        
+
         if user_address:
             await ctx.send(
                 user_address,
                 create_text_message(response_text)
             )
-        
+
         # Store verified reasoning in MeTTa graph for future reuse
         if METTA_AVAILABLE and metta_instance:
             try:
@@ -355,37 +355,37 @@ async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledge
 async def startup_handler(ctx: Context):
     """Initialize MeTTa reasoning engine and agent."""
     global metta_instance, reasoning_rag
-    
+
     # Initialize MeTTa reasoning engine
     if METTA_AVAILABLE:
         try:
             metta_instance = MeTTa()
             initialize_reasoning_knowledge(metta_instance)
             reasoning_rag = GeneralRAG(metta_instance)
-            
+
             # Show MeTTa knowledge graph statistics
             ctx.logger.info("=" * 60)
             ctx.logger.info("🧠 MeTTa Knowledge Graph Initialized")
             ctx.logger.info("=" * 60)
-            
+
             # Test queries to show available knowledge
             available_patterns = reasoning_rag.query_reasoning_pattern("causal")
             ctx.logger.info(f"  Reasoning Patterns: {len(available_patterns) if available_patterns else 0}")
             if available_patterns and len(available_patterns) > 0:
                 ctx.logger.info(f"    Example: {available_patterns[0][:70]}...")
-            
+
             validation_criteria = reasoning_rag.query_validation_criteria()
             ctx.logger.info(f"  Validation Criteria: {len(validation_criteria) if validation_criteria else 0}")
             if validation_criteria and len(validation_criteria) > 0:
                 ctx.logger.info(f"    Example: {validation_criteria[0][:70]}...")
-            
+
             # Test domain knowledge
             test_concept = "transformer"
             test_rules = reasoning_rag.query_domain_rule(test_concept)
             if test_rules:
                 ctx.logger.info(f"  Domain Knowledge (test): {len(test_rules)} rules for '{test_concept}'")
                 ctx.logger.info(f"    Example: {test_rules[0][:70]}...")
-            
+
             ctx.logger.info("=" * 60)
             ctx.logger.info("✅ MeTTa-Enhanced Reasoning Ready")
             ctx.logger.info("=" * 60)
@@ -397,7 +397,7 @@ async def startup_handler(ctx: Context):
     else:
         # Silent fallback - no warning
         ctx.logger.info("🧠 Reasoning Agent ready (fallback mode)")
-    
+
     # Validation agent configured (will communicate directly via address)
     if VALIDATION_AGENT_ADDRESS:
         ctx.logger.info(f"  Validation Agent: {VALIDATION_AGENT_ADDRESS[:20]}... ✓")
