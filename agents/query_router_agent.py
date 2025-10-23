@@ -413,24 +413,7 @@ async def startup_handler(ctx: Context):
         ctx.logger.info(f"  {agent_name.capitalize()}: {address or 'N/A'} {status}")
     
     ctx.logger.info("=" * 60)
-    
-    # Register specialized agents for local communication
-    if AGENT_ADDRESSES["research"]:
-        await ctx.register(AGENT_ADDRESSES["research"])
-        ctx.logger.info("✓ Registered Research Agent")
-    
-    if AGENT_ADDRESSES["reasoning"]:
-        await ctx.register(AGENT_ADDRESSES["reasoning"])
-        ctx.logger.info("✓ Registered Reasoning Agent")
-    
-    if AGENT_ADDRESSES["validation"]:
-        await ctx.register(AGENT_ADDRESSES["validation"])
-        ctx.logger.info("✓ Registered Validation Agent")
-    
-    if AGENT_ADDRESSES["capsule"]:
-        await ctx.register(AGENT_ADDRESSES["capsule"])
-        ctx.logger.info("✓ Registered Capsule Agent")
-    
+    ctx.logger.info("ℹ️  Note: Agents communicate directly via addresses (no registration needed)")
     ctx.logger.info("=" * 60)
     ctx.logger.info("✅ Query Router Agent ready to process queries!")
     ctx.logger.info("=" * 60)

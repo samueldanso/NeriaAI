@@ -1,24 +1,36 @@
 # validation_agent.py
 """
-NeriaMind Validation Agent
-Coordinates human expert validation via ASI:One integration
-Manages approve/revise workflow for reasoning chains
-Creates validation proof for Knowledge Capsules
-Ensures all knowledge is human-verified before storage
+NeriaMind Multi-Agent Validation System
+Coordinates 3 specialized sub-validators for automated reasoning validation
+
+Architecture:
+┌─────────────────────────────────────────────┐
+│        VALIDATION AGENT (Coordinator)        │
+├─────────────────────────────────────────────┤
+│  ├─ Logic Validator: Checks coherence ✅    │
+│  ├─ Source Validator: Verifies facts ✅     │
+│  └─ Completeness Validator: Checks answer ✅│
+│                                              │
+│  Consensus: 3/3 approved → VERIFIED ✅       │
+│  (If 1-2 reject → Revision requested 🔄)    │
+└─────────────────────────────────────────────┘
 
 Features:
-- ASI:One API integration for expert validation
-- Approve/Revise workflow management
-- Validation status tracking
+- Automated multi-agent validation (no human required)
+- Logic coherence checking
+- Source/fact verification
+- Completeness assessment
+- Consensus-based approval
+- Revision feedback loop to Reasoning Agent
 - Validation proof generation
-- Forwarding to Capsule Agent upon approval
 """
 
 import os
 import json
+import re
 from datetime import datetime, timezone
 from uuid import uuid4
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from enum import Enum
 
 from uagents import Agent, Context, Protocol
@@ -28,11 +40,8 @@ from uagents_core.contrib.protocols.chat import (
     ChatAcknowledgement,
     TextContent,
     MetadataContent,
-    StartSessionContent,
-    EndSessionContent,
 )
 
-import requests
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -45,276 +54,548 @@ class ValidationStatus(str, Enum):
     REVISION_REQUESTED = "revision_requested"
     REJECTED = "rejected"
     IN_REVIEW = "in_review"
+    VERIFIED = "verified"  # All 3 validators approved
+
+class ValidatorDecision(str, Enum):
+    APPROVE = "approve"
+    REJECT = "reject"
+    NEEDS_REVISION = "needs_revision"
 
 # Agent configuration
 VALIDATION_NAME = os.getenv("VALIDATION_NAME", "validation_agent")
 VALIDATION_PORT = int(os.getenv("VALIDATION_PORT", "9003"))
 VALIDATION_SEED = os.getenv("VALIDATION_SEED", "validation_agent_secret_seed")
 
-# ASI:One API configuration
-ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY", "")
-ASI_ONE_API_URL = os.getenv("ASI_ONE_API_URL", "https://api.asi.one/v1")
-ASI_ONE_VALIDATION_ENDPOINT = f"{ASI_ONE_API_URL}/validation"
-
 # Agent addresses
 CAPSULE_AGENT_ADDRESS = os.getenv("CAPSULE_AGENT_ADDRESS", "")
 REASONING_AGENT_ADDRESS = os.getenv("REASONING_AGENT_ADDRESS", "")
 
 # Validation configuration
-AUTO_APPROVE_THRESHOLD = float(os.getenv("AUTO_APPROVE_THRESHOLD", "0.95"))
-VALIDATION_TIMEOUT = int(os.getenv("VALIDATION_TIMEOUT", "3600"))  # 1 hour
-ENABLE_AUTO_APPROVE = os.getenv("ENABLE_AUTO_APPROVE", "false").lower() == "true"
+CONSENSUS_THRESHOLD = 3  # All 3 validators must approve
+MAX_REVISION_ATTEMPTS = int(os.getenv("MAX_REVISION_ATTEMPTS", "2"))
 
 # Initialize the Validation Agent
 validation_agent = Agent(
     name=VALIDATION_NAME,
     port=VALIDATION_PORT,
     seed=VALIDATION_SEED,
-    mailbox=True,  # Using mailbox for Agentverse connectivity
+    mailbox=True,
 )
 
-# Chat protocol for agent communication
+# Chat protocol
 chat = Protocol(spec=chat_protocol_spec)
 
 # Active validation sessions
 validation_sessions: Dict[str, Dict[str, Any]] = {}
 
 
-def create_text_message(text: str) -> ChatMessage:
-    """Create a standard text ChatMessage."""
+# ============================================
+# VALIDATOR CLASSES
+# ============================================
+
+class LogicValidator:
+    """
+    Validates logical coherence and consistency of reasoning.
+
+    Checks:
+    - No logical contradictions
+    - Valid reasoning patterns
+    - Proper inference steps
+    - Sound argumentation structure
+    """
+
+    def __init__(self):
+        self.name = "Logic Validator"
+        self.version = "1.0"
+
+    def validate(self, reasoning_chain: Dict[str, Any]) -> Tuple[ValidatorDecision, str, float]:
+        """
+        Validate logical coherence.
+
+    Returns:
+            (decision, feedback, confidence_score)
+        """
+        issues = []
+        score = 1.0
+
+        reasoning_steps = reasoning_chain.get('reasoning_steps', '')
+        reasoning_type = reasoning_chain.get('reasoning_type', '')
+
+        # Check 1: Reasoning steps are not empty
+        if not reasoning_steps or len(reasoning_steps.strip()) < 50:
+            issues.append("Reasoning steps are too brief or missing")
+            score -= 0.3
+
+        # Check 2: Look for logical structure keywords
+        structure_keywords = ['therefore', 'thus', 'because', 'since', 'follows',
+                             'implies', 'consequently', 'hence', 'step', 'first', 'then']
+        found_keywords = sum(1 for kw in structure_keywords if kw.lower() in reasoning_steps.lower())
+
+        if found_keywords < 2:
+            issues.append("Reasoning lacks clear logical structure (missing transition words)")
+            score -= 0.2
+
+        # Check 3: Check for contradictions (basic)
+        contradiction_patterns = [
+            (r'\b(not|never|no)\b.*\b(is|are|was|were)\b', r'\b(is|are|was|were)\b'),
+            (r'\bfalse\b', r'\btrue\b'),
+            (r'\bcannot\b', r'\bcan\b'),
+        ]
+
+        for neg_pattern, pos_pattern in contradiction_patterns:
+            if re.search(neg_pattern, reasoning_steps, re.IGNORECASE) and \
+               re.search(pos_pattern, reasoning_steps, re.IGNORECASE):
+                # Check if they're about the same subject (simple heuristic)
+                issues.append("Potential logical contradiction detected")
+                score -= 0.25
+                break
+
+        # Check 4: Reasoning type consistency
+        type_keywords = {
+            'deductive': ['premise', 'conclusion', 'logic', 'follows'],
+            'inductive': ['pattern', 'observation', 'generalize', 'examples'],
+            'causal': ['cause', 'effect', 'because', 'leads to', 'results in'],
+            'comparative': ['compare', 'contrast', 'difference', 'similarity', 'versus'],
+            'abductive': ['explanation', 'hypothesis', 'likely', 'best', 'explains']
+        }
+
+        if reasoning_type in type_keywords:
+            expected_keywords = type_keywords[reasoning_type]
+            found = sum(1 for kw in expected_keywords if kw in reasoning_steps.lower())
+            if found == 0:
+                issues.append(f"Reasoning doesn't match declared type '{reasoning_type}'")
+                score -= 0.2
+
+        # Check 5: Numbered steps or clear progression
+        has_numbers = bool(re.search(r'\b[1-9]\.|step\s+[1-9]', reasoning_steps, re.IGNORECASE))
+        has_bullets = bool(re.search(r'^[-*•]', reasoning_steps, re.MULTILINE))
+
+        if not has_numbers and not has_bullets:
+            issues.append("Reasoning steps could be more clearly structured")
+            score -= 0.15
+
+        # Make decision
+        score = max(0.0, score)
+
+        if score >= 0.8 and len(issues) == 0:
+            return (ValidatorDecision.APPROVE,
+                   "✅ Logic is coherent and well-structured",
+                   score)
+        elif score >= 0.6:
+            return (ValidatorDecision.NEEDS_REVISION,
+                   f"⚠️ Logic needs improvement:\n" + "\n".join(f"  - {issue}" for issue in issues),
+                   score)
+        else:
+            return (ValidatorDecision.REJECT,
+                   f"❌ Logical issues found:\n" + "\n".join(f"  - {issue}" for issue in issues),
+                   score)
+
+
+class SourceValidator:
+    """
+    Validates factual accuracy and source credibility.
+
+    Checks:
+    - Claims are supported by context
+    - No obvious factual errors
+    - References to knowledge are appropriate
+    - Evidence supports conclusions
+    """
+
+    def __init__(self):
+        self.name = "Source Validator"
+        self.version = "1.0"
+
+    def validate(self, reasoning_chain: Dict[str, Any]) -> Tuple[ValidatorDecision, str, float]:
+        """
+        Validate factual accuracy and sources.
+
+    Returns:
+            (decision, feedback, confidence_score)
+        """
+        issues = []
+        score = 1.0
+
+        reasoning_steps = reasoning_chain.get('reasoning_steps', '')
+        metadata = reasoning_chain.get('metadata', {})
+        metta_knowledge = reasoning_chain.get('metta_knowledge_used', {})
+
+        # Check 1: Research context provided
+        has_research_context = metadata.get('has_research_context', False)
+        if not has_research_context and not metta_knowledge:
+            issues.append("No research context or knowledge base references provided")
+            score -= 0.3
+
+        # Check 2: MeTTa knowledge utilization
+        if metta_knowledge:
+            patterns = metta_knowledge.get('patterns', [])
+            domain_rules = metta_knowledge.get('domain_rules', [])
+
+            if len(patterns) == 0 and len(domain_rules) == 0:
+                issues.append("MeTTa knowledge referenced but not utilized")
+                score -= 0.2
+
+        # Check 3: Check for unsupported claims (basic detection)
+        claim_indicators = ['claim', 'assert', 'state', 'argue', 'propose']
+        evidence_indicators = ['because', 'evidence', 'shown', 'research', 'study',
+                              'according to', 'based on', 'demonstrates']
+
+        has_claims = any(indicator in reasoning_steps.lower() for indicator in claim_indicators)
+        has_evidence = any(indicator in reasoning_steps.lower() for indicator in evidence_indicators)
+
+        if has_claims and not has_evidence:
+            issues.append("Contains claims without supporting evidence")
+            score -= 0.25
+
+        # Check 4: Check for hedge words (uncertainty indicators)
+        hedge_words = ['might', 'possibly', 'perhaps', 'unclear', 'uncertain',
+                       'not sure', 'don\'t know', 'unclear']
+        excessive_hedging = sum(1 for word in hedge_words if word in reasoning_steps.lower())
+
+        if excessive_hedging > 3:
+            issues.append("Excessive uncertainty in reasoning (too many hedge words)")
+            score -= 0.2
+
+        # Check 5: Confidence vs content quality
+        confidence = reasoning_chain.get('confidence', 0.5)
+        if confidence > 0.8 and not has_research_context and not metta_knowledge:
+            issues.append("High confidence claim without knowledge base support")
+            score -= 0.3
+
+        # Check 6: Look for citation patterns (even informal)
+        has_references = bool(re.search(r'(according to|research|study|paper|source|reference)',
+                                       reasoning_steps, re.IGNORECASE))
+        if has_references:
+            score += 0.1  # Bonus for citing sources
+
+        # Make decision
+        score = max(0.0, min(1.0, score))
+
+        if score >= 0.8 and len(issues) == 0:
+            return (ValidatorDecision.APPROVE,
+                   "✅ Facts are well-supported and credible",
+                   score)
+        elif score >= 0.6:
+            return (ValidatorDecision.NEEDS_REVISION,
+                   f"⚠️ Source validation needs improvement:\n" + "\n".join(f"  - {issue}" for issue in issues),
+                   score)
+        else:
+            return (ValidatorDecision.REJECT,
+                   f"❌ Factual concerns found:\n" + "\n".join(f"  - {issue}" for issue in issues),
+                   score)
+
+
+class CompletenessValidator:
+    """
+    Validates completeness and thoroughness of answer.
+
+    Checks:
+    - Question is fully answered
+    - All key concepts addressed
+    - Conclusion provided
+    - No missing steps in reasoning
+    """
+
+    def __init__(self):
+        self.name = "Completeness Validator"
+        self.version = "1.0"
+
+    def validate(self, reasoning_chain: Dict[str, Any]) -> Tuple[ValidatorDecision, str, float]:
+        """
+        Validate completeness of reasoning.
+
+        Returns:
+            (decision, feedback, confidence_score)
+        """
+        issues = []
+        score = 1.0
+
+        query = reasoning_chain.get('query', '')
+        reasoning_steps = reasoning_chain.get('reasoning_steps', '')
+        key_concepts = reasoning_chain.get('key_concepts', [])
+
+        # Check 1: Query is addressed
+        if not query:
+            issues.append("Original query missing")
+            score -= 0.3
+        else:
+            # Check if key query words appear in reasoning
+            query_words = set(re.findall(r'\b\w{4,}\b', query.lower()))
+            reasoning_words = set(re.findall(r'\b\w{4,}\b', reasoning_steps.lower()))
+            overlap = len(query_words & reasoning_words) / max(len(query_words), 1)
+
+            if overlap < 0.3:
+                issues.append("Reasoning doesn't address key terms from the query")
+                score -= 0.25
+
+        # Check 2: Key concepts are covered
+        if key_concepts:
+            concepts_mentioned = sum(1 for concept in key_concepts
+                                    if concept.lower() in reasoning_steps.lower())
+            coverage = concepts_mentioned / len(key_concepts)
+
+            if coverage < 0.5:
+                issues.append(f"Only {concepts_mentioned}/{len(key_concepts)} key concepts addressed")
+                score -= 0.3
+            elif coverage < 0.8:
+                issues.append(f"Some key concepts not fully addressed ({concepts_mentioned}/{len(key_concepts)})")
+                score -= 0.15
+
+        # Check 3: Has conclusion section
+        has_conclusion = bool(re.search(r'(conclusion|in summary|therefore|thus|finally|to conclude)',
+                                       reasoning_steps, re.IGNORECASE))
+        if not has_conclusion:
+            issues.append("Missing clear conclusion or summary")
+            score -= 0.2
+
+        # Check 4: Reasoning length (basic completeness indicator)
+        if len(reasoning_steps) < 200:
+            issues.append("Reasoning appears too brief to be complete")
+            score -= 0.25
+        elif len(reasoning_steps) < 100:
+            issues.append("Reasoning is severely lacking in detail")
+            score -= 0.4
+
+        # Check 5: Check for "why" questions being answered
+        if 'why' in query.lower():
+            explanation_indicators = ['because', 'due to', 'reason', 'cause', 'explains']
+            has_explanation = any(ind in reasoning_steps.lower() for ind in explanation_indicators)
+            if not has_explanation:
+                issues.append("'Why' question not adequately explained")
+                score -= 0.3
+
+        # Check 6: Check for "how" questions being answered
+        if 'how' in query.lower():
+            process_indicators = ['step', 'first', 'then', 'next', 'process', 'method']
+            has_process = any(ind in reasoning_steps.lower() for ind in process_indicators)
+            if not has_process:
+                issues.append("'How' question not explained as a process")
+                score -= 0.3
+
+        # Check 7: Multiple sections/steps present
+        section_count = len(re.findall(r'(^|\n)#+\s+|\d+\.|^[-*•]\s+', reasoning_steps, re.MULTILINE))
+        if section_count < 2:
+            issues.append("Reasoning lacks detailed step-by-step breakdown")
+            score -= 0.15
+
+        # Make decision
+        score = max(0.0, score)
+
+        if score >= 0.8 and len(issues) == 0:
+            return (ValidatorDecision.APPROVE,
+                   "✅ Answer is complete and thorough",
+                   score)
+        elif score >= 0.6:
+            return (ValidatorDecision.NEEDS_REVISION,
+                   f"⚠️ Completeness needs improvement:\n" + "\n".join(f"  - {issue}" for issue in issues),
+                   score)
+        else:
+            return (ValidatorDecision.REJECT,
+                   f"❌ Answer is incomplete:\n" + "\n".join(f"  - {issue}" for issue in issues),
+                   score)
+
+
+# ============================================
+# VALIDATION COORDINATOR
+# ============================================
+
+class ValidationCoordinator:
+    """
+    Coordinates the three validators and determines consensus.
+    """
+
+    def __init__(self):
+        self.logic_validator = LogicValidator()
+        self.source_validator = SourceValidator()
+        self.completeness_validator = CompletenessValidator()
+
+    def validate_reasoning(self, reasoning_chain: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Run all three validators and determine consensus.
+
+    Returns:
+            Validation result with consensus decision
+        """
+        # Run all validators
+        logic_decision, logic_feedback, logic_score = self.logic_validator.validate(reasoning_chain)
+        source_decision, source_feedback, source_score = self.source_validator.validate(reasoning_chain)
+        completeness_decision, completeness_feedback, completeness_score = \
+            self.completeness_validator.validate(reasoning_chain)
+
+        # Collect results
+        validators_results = {
+            'logic': {
+                'decision': logic_decision.value,
+                'feedback': logic_feedback,
+                'score': logic_score
+            },
+            'source': {
+                'decision': source_decision.value,
+                'feedback': source_feedback,
+                'score': source_score
+            },
+            'completeness': {
+                'decision': completeness_decision.value,
+                'feedback': completeness_feedback,
+                'score': completeness_score
+            }
+        }
+
+        # Count approvals
+        approvals = sum(1 for v in validators_results.values()
+                       if v['decision'] == ValidatorDecision.APPROVE.value)
+        rejections = sum(1 for v in validators_results.values()
+                        if v['decision'] == ValidatorDecision.REJECT.value)
+        revision_requests = sum(1 for v in validators_results.values()
+                               if v['decision'] == ValidatorDecision.NEEDS_REVISION.value)
+
+        # Determine consensus
+        if approvals == 3:
+            final_status = ValidationStatus.VERIFIED
+            final_message = "✅ VERIFIED - All 3 validators approved!"
+        elif rejections >= 1:
+            final_status = ValidationStatus.REJECTED
+            final_message = f"❌ REJECTED - {rejections} validator(s) rejected"
+        else:
+            final_status = ValidationStatus.REVISION_REQUESTED
+            final_message = f"🔄 REVISION NEEDED - {revision_requests} validator(s) request improvements"
+
+        # Calculate average score
+        avg_score = (logic_score + source_score + completeness_score) / 3
+
+        return {
+            'status': final_status.value,
+            'message': final_message,
+            'validators': validators_results,
+            'consensus': {
+                'approvals': approvals,
+                'rejections': rejections,
+                'revision_requests': revision_requests,
+                'average_score': avg_score
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
+
+def create_text_message(text: str, metadata: Optional[Dict[str, str]] = None) -> ChatMessage:
+    """Create a ChatMessage with TextContent."""
+    content = [TextContent(type="text", text=text)]
+    if metadata:
+        content.append(MetadataContent(type="metadata", metadata=metadata))
+
     return ChatMessage(
         timestamp=datetime.now(timezone.utc),
         msg_id=uuid4(),
-        content=[TextContent(type="text", text=text)]
+        content=content
     )
 
 
-def extract_reasoning_chain(msg: ChatMessage) -> Optional[Dict[str, Any]]:
-    """
-    Extract reasoning chain data from ChatMessage metadata.
+def format_validation_report(validation_result: Dict[str, Any], reasoning_chain: Dict[str, Any]) -> str:
+    """Format validation report for display."""
+    validators = validation_result['validators']
+    consensus = validation_result['consensus']
 
-    Args:
-        msg: ChatMessage containing reasoning chain
-
-    Returns:
-        Reasoning chain dict or None
-    """
-    reasoning_chain = None
-
-    for content in msg.content:
-        if isinstance(content, MetadataContent):
-            metadata = content.metadata
-            if 'reasoning_chain' in metadata:
-                # Parse JSON if it's a string
-                rc = metadata['reasoning_chain']
-                if isinstance(rc, str):
-                    try:
-                        reasoning_chain = json.loads(rc)
-                    except json.JSONDecodeError:
-                        reasoning_chain = {'raw': rc}
-                else:
-                    reasoning_chain = rc
-                break
-
-    return reasoning_chain
-
-
-def format_for_human_validation(reasoning_chain: Dict[str, Any]) -> str:
-    """
-    Format reasoning chain for human expert review.
-
-    Args:
-        reasoning_chain: Reasoning chain dictionary
-
-    Returns:
-        Formatted validation request string
-    """
-    validation_text = """
+    report = f"""
 ╔══════════════════════════════════════════════════════════════╗
-║           REASONING CHAIN - HUMAN VALIDATION REQUIRED        ║
+║        MULTI-AGENT VALIDATION REPORT                         ║
 ╚══════════════════════════════════════════════════════════════╝
 
 📋 QUERY
-{query}
+{reasoning_chain.get('query', 'N/A')}
 
-🧠 REASONING TYPE
-{reasoning_type}
-
-🔑 KEY CONCEPTS
-{concepts}
+🎯 VALIDATION STATUS: {validation_result['status'].upper()}
+{validation_result['message']}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📖 REASONING STEPS
-{reasoning_steps}
+📊 VALIDATOR RESULTS
+
+🧠 Logic Validator
+   Decision: {validators['logic']['decision'].upper()}
+   Score: {validators['logic']['score']:.2%}
+   {validators['logic']['feedback']}
+
+📚 Source Validator
+   Decision: {validators['source']['decision'].upper()}
+   Score: {validators['source']['score']:.2%}
+   {validators['source']['feedback']}
+
+✓ Completeness Validator
+   Decision: {validators['completeness']['decision'].upper()}
+   Score: {validators['completeness']['score']:.2%}
+   {validators['completeness']['feedback']}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📊 METADATA
-
-Confidence Score:     {confidence:.2%}
-Requires Validation:  {requires_validation}
-MeTTa Knowledge Used: {metta_knowledge}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ VALIDATION CHECKLIST
-
-□ Logical consistency: No contradictions?
-□ Evidence support: All claims backed?
-□ Transparency: Each step clear?
-□ Completeness: All necessary steps included?
-□ Accuracy: Factually correct?
+📈 CONSENSUS METRICS
+   ✅ Approvals: {consensus['approvals']}/3
+   ❌ Rejections: {consensus['rejections']}/3
+   🔄 Revision Requests: {consensus['revision_requests']}/3
+   📊 Average Score: {consensus['average_score']:.2%}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
 
-🎯 VALIDATION OPTIONS
-
-1. ✅ APPROVE - Reasoning is valid and complete
-2. 🔄 REQUEST REVISION - Needs improvements (provide feedback)
-3. ❌ REJECT - Fundamental issues (provide reason)
-
-Please respond with your validation decision and any feedback.
-""".format(
-        query=reasoning_chain.get('query', 'N/A'),
-        reasoning_type=reasoning_chain.get('reasoning_type', 'N/A'),
-        concepts=', '.join(reasoning_chain.get('key_concepts', [])),
-        reasoning_steps=reasoning_chain.get('reasoning_steps', 'N/A'),
-        confidence=reasoning_chain.get('confidence', 0.0),
-        requires_validation=reasoning_chain.get('requires_validation', True),
-        metta_knowledge=json.dumps(reasoning_chain.get('metta_knowledge_used', {}), indent=2)
-    )
-
-    return validation_text
-
-
-def send_to_asi_one_validators(reasoning_chain: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Send reasoning chain to ASI:One API for human expert validation.
-
-    Args:
-        reasoning_chain: Reasoning chain to validate
-
-    Returns:
-        Validation response from ASI:One
-    """
-    if not ASI_ONE_API_KEY:
-        # Mock validation response for testing
-        return {
-            'status': 'mock',
-            'validation_id': str(uuid4()),
-            'message': 'ASI:One API key not configured - using mock validation',
-            'estimated_time': 300
-        }
-
-    try:
-        headers = {
-            'Authorization': f'Bearer {ASI_ONE_API_KEY}',
-            'Content-Type': 'application/json'
-        }
-
-        payload = {
-            'reasoning_chain': reasoning_chain,
-            'validation_request': format_for_human_validation(reasoning_chain),
-            'priority': 'high' if reasoning_chain.get('confidence', 0) < 0.7 else 'normal',
-            'timeout': VALIDATION_TIMEOUT
-        }
-
-        response = requests.post(
-            ASI_ONE_VALIDATION_ENDPOINT,
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-
-        response.raise_for_status()
-        return response.json()
-
-    except Exception as e:
-        print(f"❌ ASI:One validation request failed: {e}")
-        # Return mock response on error
-        return {
-            'status': 'error',
-            'validation_id': str(uuid4()),
-            'message': f'Validation request failed: {str(e)}',
-            'fallback': True
-        }
+    return report
 
 
 def create_validation_proof(
     reasoning_chain: Dict[str, Any],
-    validation_status: ValidationStatus,
-    validator_feedback: str = "",
-    validator_id: str = "system"
+    validation_result: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """
-    Create validation proof document for approved reasoning.
-
-    Args:
-        reasoning_chain: Validated reasoning chain
-        validation_status: Final validation status
-        validator_feedback: Expert feedback
-        validator_id: ID of validator
-
-    Returns:
-        Validation proof dictionary
-    """
-    proof = {
+    """Create validation proof for verified reasoning."""
+    return {
         'validation_id': str(uuid4()),
         'timestamp': datetime.now(timezone.utc).isoformat(),
-        'status': validation_status.value,
+        'status': validation_result['status'],
         'reasoning_chain': reasoning_chain,
-        'validator': {
-            'id': validator_id,
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'feedback': validator_feedback
+        'validation_result': validation_result,
+        'validators': {
+            'logic': validation_result['validators']['logic'],
+            'source': validation_result['validators']['source'],
+            'completeness': validation_result['validators']['completeness']
         },
+        'consensus': validation_result['consensus'],
         'metadata': {
+            'validator_version': '1.0',
+            'validation_type': 'multi_agent_automated',
             'confidence': reasoning_chain.get('confidence', 0.0),
-            'reasoning_type': reasoning_chain.get('reasoning_type', 'unknown'),
-            'auto_approved': validation_status == ValidationStatus.APPROVED and
-                           reasoning_chain.get('confidence', 0) >= AUTO_APPROVE_THRESHOLD
+            'reasoning_type': reasoning_chain.get('reasoning_type', 'unknown')
         }
     }
 
-    return proof
 
+# ============================================
+# MESSAGE HANDLERS
+# ============================================
 
-def check_auto_approve(reasoning_chain: Dict[str, Any]) -> bool:
-    """
-    Check if reasoning chain qualifies for auto-approval.
-
-    Args:
-        reasoning_chain: Reasoning chain to check
-
-    Returns:
-        True if auto-approve criteria met
-    """
-    if not ENABLE_AUTO_APPROVE:
-        return False
-
-    confidence = reasoning_chain.get('confidence', 0.0)
-    return confidence >= AUTO_APPROVE_THRESHOLD
+# Initialize coordinator
+coordinator = ValidationCoordinator()
 
 
 @chat.on_message(ChatMessage)
 async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage):
     """Handle incoming validation requests from Reasoning Agent."""
-    # ACK first (required by chat protocol)
+    # ACK first
     await ctx.send(sender, ChatAcknowledgement(
         timestamp=datetime.now(timezone.utc),
         acknowledged_msg_id=msg.msg_id,
     ))
 
-    ctx.logger.info(f"📥 Validation request from {sender}")
+    ctx.logger.info(f"Validating from {sender[:20]}...")
 
-    # Extract reasoning chain
+    # Extract reasoning chain and metadata
     reasoning_chain = None
     query_text = None
+    session_id = None
+    user_address = None
 
     for content in msg.content:
         if isinstance(content, TextContent):
-            # Text might contain the reasoning chain formatted
             query_text = content.text
         if isinstance(content, MetadataContent):
             if 'reasoning_chain' in content.metadata:
@@ -326,16 +607,19 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
                         pass
                 else:
                     reasoning_chain = rc
+            session_id = content.metadata.get('session_id')
+            user_address = content.metadata.get('user_address')
 
-    # If no structured chain, try to parse from text
+    # If no structured chain, create basic one from text
     if not reasoning_chain and query_text:
         reasoning_chain = {
-            'query': query_text,
+            'query': query_text[:200],
             'reasoning_type': 'unknown',
             'key_concepts': [],
             'reasoning_steps': query_text,
             'confidence': 0.5,
-            'requires_validation': True
+            'requires_validation': True,
+            'metadata': {}
         }
 
     if not reasoning_chain:
@@ -345,153 +629,83 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
         ))
         return
 
-    ctx.logger.info(f"🔍 Validating reasoning: {reasoning_chain.get('query', 'N/A')[:50]}...")
+    # Run multi-agent validation
+    validation_result = coordinator.validate_reasoning(reasoning_chain)
 
-    # Step 1: Check for auto-approval
-    if check_auto_approve(reasoning_chain):
-        ctx.logger.info(f"✅ Auto-approved (confidence: {reasoning_chain.get('confidence', 0):.2f})")
+    ctx.logger.info(f"Validation: {validation_result['status']} ({validation_result['consensus']['average_score']:.0%})")
 
-        # Create validation proof
-        proof = create_validation_proof(
-            reasoning_chain,
-            ValidationStatus.APPROVED,
-            "Auto-approved based on high confidence score",
-            "auto-validator"
-        )
+    # Format report
+    report = format_validation_report(validation_result, reasoning_chain)
 
-        # Forward to Capsule Agent
+    # Handle based on status
+    if validation_result['status'] == ValidationStatus.VERIFIED.value:
+        # All validators approved - create proof and forward to capsule agent
+        avg_score = validation_result['consensus']['average_score']
+        proof = create_validation_proof(reasoning_chain, validation_result)
+
+        # Forward to Capsule Agent with original sender info for feedback
         if CAPSULE_AGENT_ADDRESS:
-            ctx.logger.info("📤 Forwarding to Capsule Agent...")
+            capsule_metadata = {
+                'reasoning_chain': json.dumps(reasoning_chain),
+                'validation_proof': json.dumps(proof),
+                'status': 'verified',
+                'original_sender': sender,  # Pass original sender for feedback
+                'session_id': session_id or '',
+                'user_address': user_address or ''
+            }
+
             await ctx.send(
                 CAPSULE_AGENT_ADDRESS,
-                ChatMessage(
-                    timestamp=datetime.now(timezone.utc),
-                    msg_id=uuid4(),
-                    content=[
-                        TextContent(type="text", text=reasoning_chain.get('query', '')),
-                        MetadataContent(type="metadata", metadata={
-                            'reasoning_chain': json.dumps(reasoning_chain),
-                            'validation_proof': json.dumps(proof),
-                            'status': 'approved'
-                        })
-                    ]
-                )
-            )
-            ctx.logger.info("✓ Forwarded to Capsule Agent")
-
-        # Notify sender
-        await ctx.send(sender, create_text_message(
-            f"✅ Reasoning chain auto-approved!\n\nConfidence: {reasoning_chain.get('confidence', 0):.2%}\nValidation ID: {proof['validation_id']}"
-        ))
-        return
-
-    # Step 2: Send to human validators via ASI:One
-    ctx.logger.info("👥 Sending to human validators via ASI:One...")
-
-    validation_response = send_to_asi_one_validators(reasoning_chain)
-    validation_id = validation_response.get('validation_id', str(uuid4()))
-
-    # Store validation session
-    validation_sessions[validation_id] = {
-        'reasoning_chain': reasoning_chain,
-        'status': ValidationStatus.IN_REVIEW,
-        'sender': sender,
-        'created_at': datetime.now(timezone.utc).isoformat(),
-        'validation_response': validation_response
-    }
-
-    ctx.logger.info(f"✓ Validation request sent (ID: {validation_id})")
-
-    # Format validation request for human review
-    validation_text = format_for_human_validation(reasoning_chain)
-
-    # Send to sender for now (in production, this would go to ASI:One validators)
-    await ctx.send(sender, create_text_message(
-        f"📋 VALIDATION REQUEST SUBMITTED\n\n"
-        f"Validation ID: {validation_id}\n"
-        f"Status: {validation_response.get('status', 'pending')}\n"
-        f"Message: {validation_response.get('message', 'Sent to expert validators')}\n\n"
-        f"{validation_text}\n\n"
-        f"⏱️  Estimated review time: {validation_response.get('estimated_time', 300)} seconds\n\n"
-        f"You will be notified when validation is complete."
-    ))
-
-    # For testing: simulate approval after a brief moment
-    if validation_response.get('status') == 'mock':
-        ctx.logger.info("🔄 Mock validation - simulating approval...")
-
-        # Create validation proof
-        proof = create_validation_proof(
-            reasoning_chain,
-            ValidationStatus.APPROVED,
-            "Mock validation for testing purposes",
-            "mock-validator"
-        )
-
-        # Update session
-        validation_sessions[validation_id]['status'] = ValidationStatus.APPROVED
-        validation_sessions[validation_id]['proof'] = proof
-
-        # Forward to Capsule Agent if configured
-        if CAPSULE_AGENT_ADDRESS:
-            ctx.logger.info("📤 Forwarding approved reasoning to Capsule Agent...")
-            await ctx.send(
-                CAPSULE_AGENT_ADDRESS,
-                ChatMessage(
-        timestamp=datetime.now(timezone.utc),
-        msg_id=uuid4(),
-                    content=[
-                        TextContent(type="text", text=reasoning_chain.get('query', '')),
-                        MetadataContent(type="metadata", metadata={
-                            'reasoning_chain': json.dumps(reasoning_chain),
-                            'validation_proof': json.dumps(proof),
-                            'status': 'approved'
-                        })
-                    ]
-                )
+                create_text_message(reasoning_chain.get('query', ''), metadata=capsule_metadata)
             )
 
-        # Notify sender of approval
-        await ctx.send(sender, create_text_message(
-            f"✅ REASONING CHAIN APPROVED\n\n"
-            f"Validation ID: {validation_id}\n"
-            f"Status: Approved\n"
-            f"Validator: {proof['validator']['id']}\n"
-            f"Feedback: {proof['validator']['feedback']}\n\n"
-            f"This verified reasoning has been forwarded to the Capsule Agent for storage as a reusable Knowledge Capsule."
-        ))
+            ctx.logger.info(f"✅ VERIFIED - Forwarded to Capsule Agent (score: {avg_score:.0%})")
+        else:
+            ctx.logger.warning("⚠️ Capsule Agent address not configured")
+
+        # Don't send response back to reasoning agent (would create loop)
+        # Capsule agent will send feedback to original requester
+
+    elif validation_result['status'] == ValidationStatus.REVISION_REQUESTED.value:
+        # Some validators need revision - log but don't respond (would create loop)
+        issues = []
+        for validator_name, result in validation_result['validators'].items():
+            if result['decision'] != ValidatorDecision.APPROVE.value:
+                issues.append(f"{validator_name}: {result['feedback'].split(':')[0]}")
+
+        ctx.logger.info(f"Revision requested - Issues: {', '.join(issues)}")
+
+    else:  # REJECTED
+        # One or more validators rejected - log but don't respond (would create loop)
+        reasons = []
+        for validator_name, result in validation_result['validators'].items():
+            if result['decision'] == ValidatorDecision.REJECT.value:
+                # Extract first issue from feedback
+                feedback_lines = result['feedback'].split('\n')
+                for line in feedback_lines:
+                    if line.strip().startswith('-'):
+                        reasons.append(line.strip('- '))
+                        break
+
+        ctx.logger.info(f"Rejected - Reasons: {', '.join(reasons[:3])}")
 
 
 @chat.on_message(ChatAcknowledgement)
 async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledgement):
     """Handle acknowledgements from other agents."""
-    ctx.logger.info(f"✓ ACK from {sender}")
+    pass  # Silent ACK
 
 
 @validation_agent.on_event("startup")
 async def startup_handler(ctx: Context):
-    """Initialize Validation Agent."""
-    ctx.logger.info("=" * 60)
-    ctx.logger.info("✅ NERIA Validation Agent Starting...")
-    ctx.logger.info("=" * 60)
-    ctx.logger.info(f"Agent Name: {VALIDATION_NAME}")
-    ctx.logger.info(f"Agent Address: {validation_agent.address}")
-    ctx.logger.info(f"Port: {VALIDATION_PORT}")
-    ctx.logger.info(f"Mailbox: Enabled")
-    ctx.logger.info("=" * 60)
+    """Initialize Validation Agent - waits silently for validation requests."""
+    ctx.logger.info("✅ Validation Agent ready")
 
-    # Log configuration
-    ctx.logger.info("📍 Configuration:")
-    ctx.logger.info(f"  ASI:One API: {'✓ Configured' if ASI_ONE_API_KEY else '✗ Not configured (using mock)'}")
-    ctx.logger.info(f"  Capsule Agent: {CAPSULE_AGENT_ADDRESS or '✗ Not configured'}")
-    ctx.logger.info(f"  Reasoning Agent: {REASONING_AGENT_ADDRESS or '✗ Not configured'}")
-    ctx.logger.info(f"  Auto-Approve: {'✓ Enabled' if ENABLE_AUTO_APPROVE else '✗ Disabled'}")
-    ctx.logger.info(f"  Auto-Approve Threshold: {AUTO_APPROVE_THRESHOLD:.2%}")
-    ctx.logger.info(f"  Validation Timeout: {VALIDATION_TIMEOUT}s")
-    ctx.logger.info("=" * 60)
-    ctx.logger.info("✅ Validation Agent ready!")
-    ctx.logger.info("   Waiting for reasoning chains to validate...")
-    ctx.logger.info("=" * 60)
+
+@validation_agent.on_event("shutdown")
+async def shutdown_handler(ctx: Context):
+    """Cleanup on shutdown."""
+    validation_sessions.clear()
 
 
 # Include chat protocol
@@ -499,15 +713,5 @@ validation_agent.include(chat, publish_manifest=True)
 
 
 if __name__ == "__main__":
-    print("\n" + "=" * 60)
-    print("🚀 Starting NERIA Validation Agent...")
-    print("=" * 60)
-    print(f"📍 Agent Address: {validation_agent.address}")
-    print(f"🔌 Port: {VALIDATION_PORT}")
-    print(f"📬 Mailbox: Enabled")
-    print(f"👥 ASI:One Integration: {'Enabled' if ASI_ONE_API_KEY else 'DISABLED (Mock Mode)'}")
-    print(f"✅ Auto-Approve: {'Enabled' if ENABLE_AUTO_APPROVE else 'Disabled'}")
-    print("=" * 60)
-    print("Waiting for validation requests...\n")
-
+    print("✅ Validation Agent starting... (3 validators)")
     validation_agent.run()
