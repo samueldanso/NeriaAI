@@ -56,7 +56,7 @@ The MeTTa Reasoning Engine provides structured, transparent, and auditable reaso
 - C++ compiler (for building Hyperon from source)
 - **For Windows**: WSL (Windows Subsystem for Linux) recommended
 
-### ⚠️ **Important Note for Windows Users**
+### ⚠️ **Important Note for Windows Users From Team Experience**
 
 Hyperon/MeTTa has **limited Windows support** due to native dependencies. The **recommended approach** for Windows users is to use **Ubuntu via WSL (Windows Subsystem for Linux)**.
 
@@ -716,9 +716,9 @@ For issues or questions:
 
 ---
 
-**Status**: ✅ Production Ready  
-**Version**: 1.0.0  
+**Status**: __
+**Version**: V1
 **Last Updated**: 2025-01-22
 
-🎉 **Happy Reasoning with MeTTa!**
+
 
