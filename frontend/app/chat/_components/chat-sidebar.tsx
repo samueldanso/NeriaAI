@@ -1,5 +1,7 @@
 "use client";
 
+import { usePrivy } from "@privy-io/react-auth";
+import { ExitIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -15,6 +17,7 @@ export default function ChatSidebar() {
   const [agentStatus, setAgentStatus] = useState<AgentStatus[]>([]);
   const [showAgentStatus, setShowAgentStatus] = useState(false);
   const pathname = usePathname();
+  const { authenticated, user, logout } = usePrivy();
 
   useEffect(() => {
     // Fetch agent status on component mount
@@ -158,21 +161,45 @@ export default function ChatSidebar() {
         </div>
       </div>
 
-      {/* User Profile */}
+      {/* Wallet Connection Status */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-white">U</span>
+        {authenticated && user ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-white">
+                  {user.wallet?.address?.slice(0, 1).toUpperCase() || "U"}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-800 dark:text-white">
+                  {user.wallet?.address
+                    ? `${user.wallet.address.slice(
+                        0,
+                        6,
+                      )}...${user.wallet.address.slice(-4)}`
+                    : "Connected"}
+                </p>
+                <p className="text-xs text-green-500 dark:text-green-400">
+                  Wallet Connected
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              title="Disconnect wallet"
+            >
+              <ExitIcon className="size-4 text-gray-500 dark:text-gray-400" />
+            </button>
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-800 dark:text-white">
-              User
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Connected
+        ) : (
+          <div className="text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Not connected
             </p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

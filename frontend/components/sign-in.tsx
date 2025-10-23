@@ -2,10 +2,20 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { ExitIcon } from "@radix-ui/react-icons";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 export const WalletConnect = () => {
   const { login, logout, authenticated, user } = usePrivy();
+  const router = useRouter();
+
+  // Redirect to /chat after authentication
+  useEffect(() => {
+    if (authenticated) {
+      router.push("/chat");
+    }
+  }, [authenticated, router]);
 
   function handleDisconnect() {
     logout();
