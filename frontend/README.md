@@ -1,25 +1,52 @@
-# NeriaMind Web App
+# Neria AI Web App
 
-## Getting Started
+## 🚀 Quick Start
 
-First, run the development server:
+1. **Clone the repository**
 
-```bash
-cd frontend
-npm run dev
-```
+    ```bash
+    git clone https://github.com/samueldanso/NeriaAI.git
+    cd NeriaAI
+    ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Install dependencies**
 
-## Learn More
+    ```bash
+    bun install
+    ```
 
--   [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
--   [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Set up environment variables**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+    ```bash
+    cp .env-example .env
+    ```
 
-## Deploy on Vercel
+    Fill in your environment variables:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    - `NEXT_PUBLIC_PRIVY_APP_ID`: Get from [Privy](https://dashboard.privy.io/)
+    - `NEXT_PUBLIC_CHAIN_ID`: Use `11155111` for Sepolia or `1` for Mainnet
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. **Start development server**
+
+    ```bash
+    bun run dev
+    ```
+
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 🌐 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Connect your repository to [Vercel](https://vercel.com)
+3. Add your environment variables in Vercel dashboard
+4. Deploy!
+
+## 📚 Documentation
+
+-   [Next.js Documentation](https://nextjs.org/docs)
+-   [Wagmi Documentation](https://wagmi.sh)
+-   [Privy Documentation](https://docs.privy.io/basics/react/installation)
+-   [Shadcn/ui Documentation](https://ui.shadcn.com)
