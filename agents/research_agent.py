@@ -6,11 +6,13 @@ Searches existing Knowledge Capsules for reusability
 Falls back to web search if needed
 Provides structured context to Reasoning Agent
 
+Current: JSON-based capsule search (simple keyword matching)
+Future: Supabase pgvector for semantic similarity search
+
 Features:
-- FAISS vector similarity search for Knowledge Capsules
-- Sentence-transformers embeddings
+- JSON-based Knowledge Capsule search
 - Web search fallback (DuckDuckGo)
-- Low-latency pre-loaded indices
+- ASI:One intelligent summarization
 - Comprehensive verified reasoning chain database
 """
 
@@ -36,19 +38,6 @@ from uagents_core.contrib.protocols.chat import (
 import requests
 from dotenv import load_dotenv
 
-# FAISS and embeddings (with fallback)
-try:
-    import faiss
-    import numpy as np
-    from sentence_transformers import SentenceTransformer
-    FAISS_AVAILABLE = True
-except ImportError:
-    print("⚠️  FAISS/sentence-transformers not installed. Using mock search.")
-    FAISS_AVAILABLE = False
-    faiss = None
-    np = None
-    SentenceTransformer = None
-
 # Load environment variables
 load_dotenv()
 
@@ -57,13 +46,19 @@ RESEARCH_NAME = os.getenv("RESEARCH_NAME", "research_agent")
 RESEARCH_PORT = int(os.getenv("RESEARCH_PORT", "9002"))
 RESEARCH_SEED = os.getenv("RESEARCH_SEED", "research_agent_secret_seed")
 
+# ASI:One API configuration (for intelligent summarization)
+ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY", "")
+ASI_ONE_API_URL = os.getenv("ASI_ONE_API_URL", "https://api.asi1.ai/v1")  # Correct ASI:One endpoint
+ASI_ONE_MODEL = os.getenv("ASI_ONE_MODEL", "asi1-mini")  # ASI:One model (asi1-mini, asi1-fast, asi1-extended, asi1-agentic, asi1-graph)
+ASI_ONE_TIMEOUT = int(os.getenv("ASI_ONE_TIMEOUT", "30"))  # API timeout in seconds
+ENABLE_ASI_ONE_SUMMARY = os.getenv("ENABLE_ASI_ONE_SUMMARY", "true").lower() == "true"
+
 # Reasoning Agent address (for forwarding research results)
 REASONING_AGENT_ADDRESS = os.getenv("REASONING_AGENT_ADDRESS", "")
 
-# Knowledge Capsule storage
+# Knowledge Capsule storage (JSON files only - Supabase pgvector coming later)
 CAPSULE_DIR = Path("data/knowledge_capsules")
-FAISS_INDEX_PATH = CAPSULE_DIR / "capsules.index"
-CAPSULE_METADATA_PATH = CAPSULE_DIR / "capsules_metadata.json"
+CAPSULE_STORAGE_DIR = CAPSULE_DIR / "capsules"
 
 # Web search configuration
 ENABLE_WEB_SEARCH = os.getenv("ENABLE_WEB_SEARCH", "true").lower() == "true"
@@ -84,11 +79,6 @@ research_agent = Agent(
 # Chat protocol for agent communication
 chat = Protocol(spec=chat_protocol_spec)
 
-# Global state for FAISS index and embeddings
-embedding_model: Optional[Any] = None
-faiss_index: Optional[Any] = None
-capsule_metadata: List[Dict[str, Any]] = []
-
 
 def create_text_message(text: str) -> ChatMessage:
     """Create a standard text ChatMessage."""
@@ -99,62 +89,13 @@ def create_text_message(text: str) -> ChatMessage:
     )
 
 
-def initialize_capsule_storage():
-    """Initialize Knowledge Capsule storage directory."""
-    CAPSULE_DIR.mkdir(parents=True, exist_ok=True)
-    
-    # Create empty metadata if doesn't exist
-    if not CAPSULE_METADATA_PATH.exists():
-        with open(CAPSULE_METADATA_PATH, 'w') as f:
-            json.dump([], f)
-        print(f"✓ Created empty capsule metadata at {CAPSULE_METADATA_PATH}")
-
-
-def load_embedding_model():
-    """Load sentence-transformers model for embeddings."""
-    if not FAISS_AVAILABLE:
-        return None
-    
-    try:
-        model = SentenceTransformer('all-MiniLM-L6-v2')
-        print("✓ Loaded sentence-transformers model: all-MiniLM-L6-v2")
-        return model
-    except Exception as e:
-        print(f"❌ Failed to load embedding model: {e}")
-        return None
-
-
-def load_faiss_index():
-    """Load pre-existing FAISS index and metadata."""
-    global capsule_metadata
-    
-    if not FAISS_AVAILABLE:
-        return None
-    
-    try:
-        if FAISS_INDEX_PATH.exists():
-            index = faiss.read_index(str(FAISS_INDEX_PATH))
-            print(f"✓ Loaded FAISS index: {index.ntotal} vectors")
-            
-            # Load metadata
-            with open(CAPSULE_METADATA_PATH, 'r') as f:
-                capsule_metadata = json.load(f)
-            print(f"✓ Loaded {len(capsule_metadata)} capsule metadata entries")
-            
-            return index
-        else:
-            print("⚠️  No existing FAISS index found, creating new one")
-            # Create empty FAISS index (384 dimensions for all-MiniLM-L6-v2)
-            index = faiss.IndexFlatL2(384)
-            return index
-    except Exception as e:
-        print(f"❌ Failed to load FAISS index: {e}")
-        return None
+# Storage initialization is now handled by capsule_agent
 
 
 def search_knowledge_capsules(query: str, top_k: int = TOP_K_CAPSULES) -> List[Dict[str, Any]]:
     """
-    Search Knowledge Capsules using FAISS similarity search.
+    Search Knowledge Capsules using simple JSON keyword matching.
+    Future: Will be replaced with Supabase pgvector semantic search
     
     Args:
         query: Search query
@@ -163,36 +104,52 @@ def search_knowledge_capsules(query: str, top_k: int = TOP_K_CAPSULES) -> List[D
     Returns:
         List of relevant capsule passages with metadata
     """
-    if not FAISS_AVAILABLE or embedding_model is None or faiss_index is None:
-        return []
-    
     try:
-        # Check if index is empty
-        if faiss_index.ntotal == 0:
-            print("⚠️  FAISS index is empty, no capsules to search")
+        # Check if capsule directory exists
+        if not CAPSULE_STORAGE_DIR.exists():
             return []
         
-        # Encode query
-        query_embedding = embedding_model.encode([query])
+        # Get all capsule JSON files
+        capsule_files = list(CAPSULE_STORAGE_DIR.glob("*.json"))
+        if not capsule_files:
+            return []
         
-        # Search FAISS index
-        distances, indices = faiss_index.search(query_embedding.astype('float32'), top_k)
-        
-        # Filter by similarity threshold and build results
+        # Simple keyword matching (will be replaced with pgvector)
+        query_lower = query.lower()
         results = []
-        for dist, idx in zip(distances[0], indices[0]):
-            if idx >= 0 and idx < len(capsule_metadata):
-                similarity = 1.0 / (1.0 + dist)  # Convert L2 distance to similarity
-                if similarity >= SIMILARITY_THRESHOLD:
-                    capsule = capsule_metadata[idx].copy()
-                    capsule['similarity'] = float(similarity)
-                    results.append(capsule)
         
-        print(f"✓ Found {len(results)} relevant capsules (threshold: {SIMILARITY_THRESHOLD})")
-        return results
+        for capsule_file in capsule_files:
+            try:
+                with open(capsule_file, 'r') as f:
+                    capsule = json.load(f)
+                
+                # Check if query keywords match capsule content
+                searchable_text = f"{capsule.get('query', '')} {capsule.get('reasoning_steps', '')} {capsule.get('reasoning_type', '')}".lower()
+                
+                # Simple scoring based on keyword matches
+                query_words = query_lower.split()
+                matches = sum(1 for word in query_words if word in searchable_text)
+                
+                if matches > 0:
+                    similarity = matches / len(query_words)
+                    if similarity >= SIMILARITY_THRESHOLD:
+                        results.append({
+                            'capsule_id': capsule.get('capsule_id'),
+                            'query': capsule.get('query'),
+                            'reasoning_type': capsule.get('reasoning_type'),
+                            'content': capsule.get('reasoning_steps', ''),
+                            'confidence': capsule.get('confidence', 0.0),
+                            'similarity': similarity,
+                            'timestamp': capsule.get('created_at', '')
+                        })
+            except Exception:
+                continue
         
-    except Exception as e:
-        print(f"❌ FAISS search failed: {e}")
+        # Sort by similarity and return top_k
+        results.sort(key=lambda x: x['similarity'], reverse=True)
+        return results[:top_k]
+        
+    except Exception:
         return []
 
 
@@ -297,10 +254,144 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
     return results[:max_results]
 
 
+def summarize_with_asi_one(query: str, web_results: List[Dict[str, str]]) -> Optional[str]:
+    """
+    Use ASI:One API to intelligently summarize research results.
+    
+    Args:
+        query: Original query
+        web_results: Web search results
+        
+    Returns:
+        AI-generated summary or None if API fails
+    """
+    if not ASI_ONE_API_KEY or not ENABLE_ASI_ONE_SUMMARY:
+        return None
+    
+    try:
+        # Prepare context from web results
+        results_text = "\n\n".join([
+            f"Source {i+1}: {r.get('title', 'Untitled')}\n{r.get('snippet', '')}"
+            for i, r in enumerate(web_results[:3])
+        ])
+        
+        prompt = f"""You are a research assistant. Based on the following search results, provide a clear, concise answer to the user's question.
+
+Question: {query}
+
+Search Results:
+{results_text}
+
+Provide a comprehensive answer synthesizing the information above. Be factual and cite sources when relevant."""
+        
+        headers = {
+            "Authorization": f"Bearer {ASI_ONE_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        # ASI:One API format (based on official documentation)
+        # Available models: asi1-mini, asi1-fast, asi1-extended, asi1-agentic, asi1-graph
+        endpoints_to_try = [
+            # Primary: asi1-mini (128K context, fast, everyday workflows)
+            ("chat/completions", {
+                "model": ASI_ONE_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7,
+                "max_tokens": 500
+            }),
+            # Fallback: Try other ASI:One models
+            ("chat/completions", {
+                "model": "asi1-fast",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7,
+                "max_tokens": 500
+            }),
+            ("chat/completions", {
+                "model": "asi1-extended",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7,
+                "max_tokens": 500
+            }),
+        ]
+        
+        last_error = None
+        for endpoint_path, payload in endpoints_to_try:
+            try:
+                # Construct full URL
+                if ASI_ONE_API_URL.endswith('/v1'):
+                    url = f"{ASI_ONE_API_URL}/{endpoint_path}"
+                else:
+                    url = f"{ASI_ONE_API_URL}/v1/{endpoint_path}"
+                
+                model_name = payload.get("model", "unknown")
+                print(f"🔗 Trying ASI:One: {url}")
+                print(f"   Model: {model_name}, Timeout: {ASI_ONE_TIMEOUT}s")
+                
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=ASI_ONE_TIMEOUT
+                )
+                
+                # Success!
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Try different response formats
+                    summary = None
+                    if "choices" in data and len(data["choices"]) > 0:
+                        summary = data["choices"][0].get("message", {}).get("content") or data["choices"][0].get("text")
+                    elif "response" in data:
+                        summary = data["response"]
+                    elif "text" in data:
+                        summary = data["text"]
+                    elif "output" in data:
+                        summary = data["output"]
+                    
+                    if summary:
+                        print(f"✓ ASI:One generated intelligent summary ({len(summary)} chars)")
+                        print(f"   Working endpoint: {endpoint_path}")
+                        return summary
+                    else:
+                        print(f"   ⚠️  Unexpected response format. Keys: {list(data.keys())}")
+                
+                # 404 - try next endpoint
+                elif response.status_code == 404:
+                    print(f"   ✗ 404 Not Found, trying next...")
+                    continue
+                
+                # Other errors - show details and try next
+                else:
+                    print(f"   ✗ Status {response.status_code}")
+                    print(f"   Response: {response.text[:200]}")
+                    last_error = f"Status {response.status_code}: {response.text[:200]}"
+                    continue
+                    
+            except requests.exceptions.ConnectionError as e:
+                print(f"   ✗ Connection error: {str(e)[:100]}")
+                last_error = str(e)
+                continue
+            except Exception as e:
+                print(f"   ✗ Error: {str(e)[:100]}")
+                last_error = str(e)
+                continue
+        
+        # All endpoints failed
+        print(f"⚠️  All ASI:One endpoints failed. Last error: {last_error}")
+        print(f"   Please check ASI:One documentation for correct API endpoint")
+        return None
+            
+    except Exception as e:
+        print(f"⚠️  ASI:One summarization failed: {e}")
+        return None
+
+
 def format_research_context(
     query: str,
     capsules: List[Dict[str, Any]],
-    web_results: List[Dict[str, str]]
+    web_results: List[Dict[str, str]],
+    asi_one_summary: Optional[str] = None
 ) -> str:
     """
     Format research results into structured context for Reasoning Agent.
@@ -309,11 +400,18 @@ def format_research_context(
         query: Original query
         capsules: Relevant Knowledge Capsules
         web_results: Web search results
+        asi_one_summary: Optional AI-generated summary from ASI:One
         
     Returns:
         Formatted context string
     """
     context = f"# Research Context for Query: {query}\n\n"
+    
+    # Add ASI:One summary if available
+    if asi_one_summary:
+        context += "## 🤖 AI-Generated Summary (ASI:One)\n\n"
+        context += f"{asi_one_summary}\n\n"
+        context += "---\n\n"
     
     # Knowledge Capsules section
     if capsules:
@@ -328,6 +426,7 @@ def format_research_context(
     else:
         context += "## 📚 Verified Knowledge Capsules\n\n"
         context += "_No relevant verified capsules found._\n\n"
+        
     
     # Web search section
     if web_results:
@@ -349,54 +448,7 @@ def format_research_context(
     return context
 
 
-def add_knowledge_capsule(
-    query: str,
-    reasoning_type: str,
-    content: str,
-    confidence: float,
-    metadata: Dict[str, Any] = None
-):
-    """
-    Add a new verified Knowledge Capsule to the FAISS index.
-    
-    Args:
-        query: Original query
-        reasoning_type: Type of reasoning
-        content: Reasoning content
-        confidence: Confidence score
-        metadata: Additional metadata
-    """
-    if not FAISS_AVAILABLE or embedding_model is None or faiss_index is None:
-        print("⚠️  FAISS not available, cannot add capsule")
-        return
-    
-    try:
-        # Create capsule entry
-        capsule = {
-            'query': query,
-            'reasoning_type': reasoning_type,
-            'content': content,
-            'confidence': confidence,
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'metadata': metadata or {}
-        }
-        
-        # Encode and add to FAISS
-        embedding = embedding_model.encode([content])
-        faiss_index.add(embedding.astype('float32'))
-        
-        # Add to metadata
-        capsule_metadata.append(capsule)
-        
-        # Save index and metadata
-        faiss.write_index(faiss_index, str(FAISS_INDEX_PATH))
-        with open(CAPSULE_METADATA_PATH, 'w') as f:
-            json.dump(capsule_metadata, f, indent=2)
-        
-        print(f"✓ Added Knowledge Capsule (total: {len(capsule_metadata)})")
-        
-    except Exception as e:
-        print(f"❌ Failed to add capsule: {e}")
+# Capsule creation is now handled by capsule_agent
 
 
 @chat.on_message(ChatMessage)
@@ -438,16 +490,26 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
         web_results = web_search_fallback(query_text)
         ctx.logger.info(f"✓ Found {len(web_results)} web results")
     
-    # Step 3: Format research context
-    ctx.logger.info("📝 Formatting research context...")
-    research_context = format_research_context(query_text, capsules, web_results)
+    # Step 3: Generate AI summary if ASI:One is enabled
+    asi_one_summary = None
+    if web_results and ENABLE_ASI_ONE_SUMMARY and ASI_ONE_API_KEY:
+        ctx.logger.info("🤖 Generating intelligent summary with ASI:One...")
+        asi_one_summary = summarize_with_asi_one(query_text, web_results)
+        if asi_one_summary:
+            ctx.logger.info("✓ ASI:One summary generated successfully")
+        else:
+            ctx.logger.warning("⚠️  ASI:One summary failed, using standard format")
     
-    # Step 4: Always send results back to the original sender (user/agent who asked)
+    # Step 4: Format research context
+    ctx.logger.info("📝 Formatting research context...")
+    research_context = format_research_context(query_text, capsules, web_results, asi_one_summary)
+    
+    # Step 5: Always send results back to the original sender (user/agent who asked)
     ctx.logger.info("📤 Sending research results to sender...")
     await ctx.send(sender, create_text_message(research_context))
     ctx.logger.info("✓ Research results sent to sender")
     
-    # Step 5: Optionally also notify Reasoning Agent (if configured and sender is not the reasoning agent)
+    # Step 6: Optionally also notify Reasoning Agent (if configured and sender is not the reasoning agent)
     if REASONING_AGENT_ADDRESS and sender != REASONING_AGENT_ADDRESS:
         ctx.logger.info("📤 Also notifying Reasoning Agent for knowledge tracking...")
         
@@ -482,9 +544,7 @@ async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledge
 
 @research_agent.on_event("startup")
 async def startup_handler(ctx: Context):
-    """Initialize Research Agent and FAISS index."""
-    global embedding_model, faiss_index
-    
+    """Initialize Research Agent with JSON-based capsule search."""
     ctx.logger.info("=" * 60)
     ctx.logger.info("🔬 NERIA Research Agent Starting...")
     ctx.logger.info("=" * 60)
@@ -494,37 +554,20 @@ async def startup_handler(ctx: Context):
     ctx.logger.info(f"Mailbox: Enabled")
     ctx.logger.info("=" * 60)
     
-    # Initialize storage
-    ctx.logger.info("📁 Initializing Knowledge Capsule storage...")
-    initialize_capsule_storage()
-    
-    # Load embedding model
-    if FAISS_AVAILABLE:
-        ctx.logger.info("🧠 Loading embedding model...")
-        embedding_model = load_embedding_model()
-        
-        if embedding_model:
-            # Load FAISS index
-            ctx.logger.info("📊 Loading FAISS index...")
-            faiss_index = load_faiss_index()
-            
-            if faiss_index:
-                ctx.logger.info(f"✓ FAISS ready: {faiss_index.ntotal} vectors indexed")
-            else:
-                ctx.logger.warning("⚠️  FAISS index initialization failed")
-        else:
-            ctx.logger.warning("⚠️  Embedding model not available")
-    else:
-        ctx.logger.warning("⚠️  FAISS not installed - using mock search")
-    
     # Log configuration
     ctx.logger.info("=" * 60)
     ctx.logger.info("📍 Configuration:")
     ctx.logger.info(f"  Reasoning Agent: {REASONING_AGENT_ADDRESS or '✗ Not configured'}")
     ctx.logger.info(f"  Web Search: {'✓ Enabled' if ENABLE_WEB_SEARCH else '✗ Disabled'}")
+    ctx.logger.info(f"  ASI:One Summary: {'✓ Enabled' if (ENABLE_ASI_ONE_SUMMARY and ASI_ONE_API_KEY) else '✗ Disabled'}")
+    if ASI_ONE_API_KEY:
+        ctx.logger.info(f"  ASI:One Model: {ASI_ONE_MODEL}")
+        ctx.logger.info(f"  ASI:One Timeout: {ASI_ONE_TIMEOUT}s")
+    else:
+        ctx.logger.info(f"  ASI:One API: ✗ Not configured")
     ctx.logger.info(f"  Top-K Capsules: {TOP_K_CAPSULES}")
     ctx.logger.info(f"  Similarity Threshold: {SIMILARITY_THRESHOLD}")
-    ctx.logger.info(f"  FAISS Available: {'✓ Yes' if FAISS_AVAILABLE else '✗ No (Mock Mode)'}")
+    ctx.logger.info(f"  Storage: JSON (Supabase pgvector coming soon)")
     ctx.logger.info("=" * 60)
     ctx.logger.info("✅ Research Agent ready!")
     ctx.logger.info("=" * 60)
@@ -541,8 +584,9 @@ if __name__ == "__main__":
     print(f"📍 Agent Address: {research_agent.address}")
     print(f"🔌 Port: {RESEARCH_PORT}")
     print(f"📬 Mailbox: Enabled")
-    print(f"🔍 FAISS Search: {'Enabled' if FAISS_AVAILABLE else 'DISABLED (Mock Mode)'}")
+    print(f"🔍 Capsule Search: JSON-based (Supabase pgvector coming soon)")
     print(f"🌐 Web Search: {'Enabled' if ENABLE_WEB_SEARCH else 'Disabled'}")
+    print(f"🤖 ASI:One Summary: {'Enabled' if (ENABLE_ASI_ONE_SUMMARY and ASI_ONE_API_KEY) else 'Disabled'}")
     print("=" * 60)
     print("Waiting for research requests...\n")
     
