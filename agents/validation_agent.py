@@ -92,15 +92,15 @@ def create_text_message(text: str) -> ChatMessage:
 def extract_reasoning_chain(msg: ChatMessage) -> Optional[Dict[str, Any]]:
     """
     Extract reasoning chain data from ChatMessage metadata.
-    
+
     Args:
         msg: ChatMessage containing reasoning chain
-        
+
     Returns:
         Reasoning chain dict or None
     """
     reasoning_chain = None
-    
+
     for content in msg.content:
         if isinstance(content, MetadataContent):
             metadata = content.metadata
@@ -115,17 +115,17 @@ def extract_reasoning_chain(msg: ChatMessage) -> Optional[Dict[str, Any]]:
                 else:
                     reasoning_chain = rc
                 break
-    
+
     return reasoning_chain
 
 
 def format_for_human_validation(reasoning_chain: Dict[str, Any]) -> str:
     """
     Format reasoning chain for human expert review.
-    
+
     Args:
         reasoning_chain: Reasoning chain dictionary
-        
+
     Returns:
         Formatted validation request string
     """
@@ -184,17 +184,17 @@ Please respond with your validation decision and any feedback.
         requires_validation=reasoning_chain.get('requires_validation', True),
         metta_knowledge=json.dumps(reasoning_chain.get('metta_knowledge_used', {}), indent=2)
     )
-    
+
     return validation_text
 
 
 def send_to_asi_one_validators(reasoning_chain: Dict[str, Any]) -> Dict[str, Any]:
     """
     Send reasoning chain to ASI:One API for human expert validation.
-    
+
     Args:
         reasoning_chain: Reasoning chain to validate
-        
+
     Returns:
         Validation response from ASI:One
     """
@@ -206,30 +206,30 @@ def send_to_asi_one_validators(reasoning_chain: Dict[str, Any]) -> Dict[str, Any
             'message': 'ASI:One API key not configured - using mock validation',
             'estimated_time': 300
         }
-    
+
     try:
         headers = {
             'Authorization': f'Bearer {ASI_ONE_API_KEY}',
             'Content-Type': 'application/json'
         }
-        
+
         payload = {
             'reasoning_chain': reasoning_chain,
             'validation_request': format_for_human_validation(reasoning_chain),
             'priority': 'high' if reasoning_chain.get('confidence', 0) < 0.7 else 'normal',
             'timeout': VALIDATION_TIMEOUT
         }
-        
+
         response = requests.post(
             ASI_ONE_VALIDATION_ENDPOINT,
             headers=headers,
             json=payload,
             timeout=30
         )
-        
+
         response.raise_for_status()
         return response.json()
-        
+
     except Exception as e:
         print(f"❌ ASI:One validation request failed: {e}")
         # Return mock response on error
@@ -249,13 +249,13 @@ def create_validation_proof(
 ) -> Dict[str, Any]:
     """
     Create validation proof document for approved reasoning.
-    
+
     Args:
         reasoning_chain: Validated reasoning chain
         validation_status: Final validation status
         validator_feedback: Expert feedback
         validator_id: ID of validator
-        
+
     Returns:
         Validation proof dictionary
     """
@@ -272,27 +272,27 @@ def create_validation_proof(
         'metadata': {
             'confidence': reasoning_chain.get('confidence', 0.0),
             'reasoning_type': reasoning_chain.get('reasoning_type', 'unknown'),
-            'auto_approved': validation_status == ValidationStatus.APPROVED and 
+            'auto_approved': validation_status == ValidationStatus.APPROVED and
                            reasoning_chain.get('confidence', 0) >= AUTO_APPROVE_THRESHOLD
         }
     }
-    
+
     return proof
 
 
 def check_auto_approve(reasoning_chain: Dict[str, Any]) -> bool:
     """
     Check if reasoning chain qualifies for auto-approval.
-    
+
     Args:
         reasoning_chain: Reasoning chain to check
-        
+
     Returns:
         True if auto-approve criteria met
     """
     if not ENABLE_AUTO_APPROVE:
         return False
-    
+
     confidence = reasoning_chain.get('confidence', 0.0)
     return confidence >= AUTO_APPROVE_THRESHOLD
 
@@ -305,13 +305,13 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
         timestamp=datetime.now(timezone.utc),
         acknowledged_msg_id=msg.msg_id,
     ))
-    
+
     ctx.logger.info(f"📥 Validation request from {sender}")
-    
+
     # Extract reasoning chain
     reasoning_chain = None
     query_text = None
-    
+
     for content in msg.content:
         if isinstance(content, TextContent):
             # Text might contain the reasoning chain formatted
@@ -326,7 +326,7 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
                         pass
                 else:
                     reasoning_chain = rc
-    
+
     # If no structured chain, try to parse from text
     if not reasoning_chain and query_text:
         reasoning_chain = {
@@ -337,20 +337,20 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
             'confidence': 0.5,
             'requires_validation': True
         }
-    
+
     if not reasoning_chain:
         ctx.logger.warning("No reasoning chain found in message")
         await ctx.send(sender, create_text_message(
             "❌ Error: No reasoning chain provided for validation"
         ))
         return
-    
+
     ctx.logger.info(f"🔍 Validating reasoning: {reasoning_chain.get('query', 'N/A')[:50]}...")
-    
+
     # Step 1: Check for auto-approval
     if check_auto_approve(reasoning_chain):
         ctx.logger.info(f"✅ Auto-approved (confidence: {reasoning_chain.get('confidence', 0):.2f})")
-        
+
         # Create validation proof
         proof = create_validation_proof(
             reasoning_chain,
@@ -358,7 +358,7 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
             "Auto-approved based on high confidence score",
             "auto-validator"
         )
-        
+
         # Forward to Capsule Agent
         if CAPSULE_AGENT_ADDRESS:
             ctx.logger.info("📤 Forwarding to Capsule Agent...")
@@ -378,19 +378,19 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
                 )
             )
             ctx.logger.info("✓ Forwarded to Capsule Agent")
-        
+
         # Notify sender
         await ctx.send(sender, create_text_message(
             f"✅ Reasoning chain auto-approved!\n\nConfidence: {reasoning_chain.get('confidence', 0):.2%}\nValidation ID: {proof['validation_id']}"
         ))
         return
-    
+
     # Step 2: Send to human validators via ASI:One
     ctx.logger.info("👥 Sending to human validators via ASI:One...")
-    
+
     validation_response = send_to_asi_one_validators(reasoning_chain)
     validation_id = validation_response.get('validation_id', str(uuid4()))
-    
+
     # Store validation session
     validation_sessions[validation_id] = {
         'reasoning_chain': reasoning_chain,
@@ -399,12 +399,12 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
         'created_at': datetime.now(timezone.utc).isoformat(),
         'validation_response': validation_response
     }
-    
+
     ctx.logger.info(f"✓ Validation request sent (ID: {validation_id})")
-    
+
     # Format validation request for human review
     validation_text = format_for_human_validation(reasoning_chain)
-    
+
     # Send to sender for now (in production, this would go to ASI:One validators)
     await ctx.send(sender, create_text_message(
         f"📋 VALIDATION REQUEST SUBMITTED\n\n"
@@ -415,11 +415,11 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
         f"⏱️  Estimated review time: {validation_response.get('estimated_time', 300)} seconds\n\n"
         f"You will be notified when validation is complete."
     ))
-    
+
     # For testing: simulate approval after a brief moment
     if validation_response.get('status') == 'mock':
         ctx.logger.info("🔄 Mock validation - simulating approval...")
-        
+
         # Create validation proof
         proof = create_validation_proof(
             reasoning_chain,
@@ -427,19 +427,19 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
             "Mock validation for testing purposes",
             "mock-validator"
         )
-        
+
         # Update session
         validation_sessions[validation_id]['status'] = ValidationStatus.APPROVED
         validation_sessions[validation_id]['proof'] = proof
-        
+
         # Forward to Capsule Agent if configured
         if CAPSULE_AGENT_ADDRESS:
             ctx.logger.info("📤 Forwarding approved reasoning to Capsule Agent...")
             await ctx.send(
                 CAPSULE_AGENT_ADDRESS,
                 ChatMessage(
-                    timestamp=datetime.now(timezone.utc),
-                    msg_id=uuid4(),
+        timestamp=datetime.now(timezone.utc),
+        msg_id=uuid4(),
                     content=[
                         TextContent(type="text", text=reasoning_chain.get('query', '')),
                         MetadataContent(type="metadata", metadata={
@@ -450,7 +450,7 @@ async def handle_validation_request(ctx: Context, sender: str, msg: ChatMessage)
                     ]
                 )
             )
-        
+
         # Notify sender of approval
         await ctx.send(sender, create_text_message(
             f"✅ REASONING CHAIN APPROVED\n\n"
@@ -479,7 +479,7 @@ async def startup_handler(ctx: Context):
     ctx.logger.info(f"Port: {VALIDATION_PORT}")
     ctx.logger.info(f"Mailbox: Enabled")
     ctx.logger.info("=" * 60)
-    
+
     # Log configuration
     ctx.logger.info("📍 Configuration:")
     ctx.logger.info(f"  ASI:One API: {'✓ Configured' if ASI_ONE_API_KEY else '✗ Not configured (using mock)'}")
@@ -509,5 +509,5 @@ if __name__ == "__main__":
     print(f"✅ Auto-Approve: {'Enabled' if ENABLE_AUTO_APPROVE else 'Disabled'}")
     print("=" * 60)
     print("Waiting for validation requests...\n")
-    
+
     validation_agent.run()
