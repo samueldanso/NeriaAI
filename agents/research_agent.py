@@ -96,11 +96,11 @@ def search_knowledge_capsules(query: str, top_k: int = TOP_K_CAPSULES) -> List[D
     """
     Search Knowledge Capsules using simple JSON keyword matching.
     Future: Will be replaced with Supabase pgvector semantic search
-    
+
     Args:
         query: Search query
         top_k: Number of top results to return
-        
+
     Returns:
         List of relevant capsule passages with metadata
     """
@@ -108,28 +108,28 @@ def search_knowledge_capsules(query: str, top_k: int = TOP_K_CAPSULES) -> List[D
         # Check if capsule directory exists
         if not CAPSULE_STORAGE_DIR.exists():
             return []
-        
+
         # Get all capsule JSON files
         capsule_files = list(CAPSULE_STORAGE_DIR.glob("*.json"))
         if not capsule_files:
             return []
-        
+
         # Simple keyword matching (will be replaced with pgvector)
         query_lower = query.lower()
         results = []
-        
+
         for capsule_file in capsule_files:
             try:
                 with open(capsule_file, 'r') as f:
                     capsule = json.load(f)
-                
+
                 # Check if query keywords match capsule content
                 searchable_text = f"{capsule.get('query', '')} {capsule.get('reasoning_steps', '')} {capsule.get('reasoning_type', '')}".lower()
-                
+
                 # Simple scoring based on keyword matches
                 query_words = query_lower.split()
                 matches = sum(1 for word in query_words if word in searchable_text)
-                
+
                 if matches > 0:
                     similarity = matches / len(query_words)
                     if similarity >= SIMILARITY_THRESHOLD:
@@ -144,11 +144,11 @@ def search_knowledge_capsules(query: str, top_k: int = TOP_K_CAPSULES) -> List[D
                         })
             except Exception:
                 continue
-        
+
         # Sort by similarity and return top_k
         results.sort(key=lambda x: x['similarity'], reverse=True)
         return results[:top_k]
-        
+
     except Exception:
         return []
 
@@ -157,27 +157,27 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
     """
     Fallback to web search if Knowledge Capsules are insufficient.
     Uses multiple search strategies for better results.
-    
+
     Args:
         query: Search query
         max_results: Maximum number of results
-        
+
     Returns:
         List of web search results with title and snippet
     """
     if not ENABLE_WEB_SEARCH:
         print("⚠️  Web search disabled. Set ENABLE_WEB_SEARCH=true in .env")
         return []
-    
+
     # Proper headers to avoid 403 errors
     headers = {
         'User-Agent': 'NeriaAI Research Agent/1.0 (Educational Purpose; https://github.com/neria-ai)',
         'Accept': 'application/json',
         'Accept-Language': 'en-US,en;q=0.9',
     }
-    
+
     results = []
-    
+
     # Strategy 1: Try DuckDuckGo Instant Answer API
     try:
         print(f"🔍 Searching DuckDuckGo for: {query}")
@@ -188,11 +188,11 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
             'no_html': 1,
             'skip_disambig': 1
         }
-        
+
         response = requests.get(url, params=params, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
-        
+
         # Extract abstract
         if data.get('Abstract'):
             results.append({
@@ -202,7 +202,7 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
                 'url': data.get('AbstractURL', '')
             })
             print(f"  ✓ Found abstract: {data.get('Heading', 'Overview')}")
-        
+
         # Extract related topics
         for topic in data.get('RelatedTopics', [])[:max_results]:
             if isinstance(topic, dict) and 'Text' in topic:
@@ -212,13 +212,13 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
                     'snippet': topic.get('Text', ''),
                     'url': topic.get('FirstURL', '')
                 })
-        
+
         if results:
             print(f"  ✓ DuckDuckGo found {len(results)} results")
-            
+
     except Exception as e:
         print(f"  ⚠️  DuckDuckGo search failed: {e}")
-    
+
     # Strategy 2: Try Wikipedia API if still no results
     if len(results) < 2:
         try:
@@ -231,11 +231,11 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
                 'format': 'json',
                 'srlimit': 3
             }
-            
+
             response = requests.get(wiki_url, params=wiki_params, headers=headers, timeout=10)
             response.raise_for_status()
             wiki_data = response.json()
-            
+
             for item in wiki_data.get('query', {}).get('search', []):
                 results.append({
                     'source': 'Wikipedia',
@@ -243,13 +243,13 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
                     'snippet': item.get('snippet', '').replace('<span class="searchmatch">', '').replace('</span>', ''),
                     'url': f"https://en.wikipedia.org/wiki/{item.get('title', '').replace(' ', '_')}"
                 })
-            
+
             if wiki_data.get('query', {}).get('search'):
                 print(f"  ✓ Wikipedia found {len(wiki_data['query']['search'])} results")
-                
+
         except Exception as e:
             print(f"  ⚠️  Wikipedia search failed: {e}")
-    
+
     print(f"✓ Total web search results: {len(results)}")
     return results[:max_results]
 
@@ -257,24 +257,24 @@ def web_search_fallback(query: str, max_results: int = MAX_WEB_RESULTS) -> List[
 def summarize_with_asi_one(query: str, web_results: List[Dict[str, str]]) -> Optional[str]:
     """
     Use ASI:One API to intelligently summarize research results.
-    
+
     Args:
         query: Original query
         web_results: Web search results
-        
+
     Returns:
         AI-generated summary or None if API fails
     """
     if not ASI_ONE_API_KEY or not ENABLE_ASI_ONE_SUMMARY:
         return None
-    
+
     try:
         # Prepare context from web results
         results_text = "\n\n".join([
             f"Source {i+1}: {r.get('title', 'Untitled')}\n{r.get('snippet', '')}"
             for i, r in enumerate(web_results[:3])
         ])
-        
+
         prompt = f"""You are a research assistant. Based on the following search results, provide a clear, concise answer to the user's question.
 
 Question: {query}
@@ -283,12 +283,12 @@ Search Results:
 {results_text}
 
 Provide a comprehensive answer synthesizing the information above. Be factual and cite sources when relevant."""
-        
+
         headers = {
             "Authorization": f"Bearer {ASI_ONE_API_KEY}",
             "Content-Type": "application/json"
         }
-        
+
         # ASI:One API format (based on official documentation)
         # Available models: asi1-mini, asi1-fast, asi1-extended, asi1-agentic, asi1-graph
         endpoints_to_try = [
@@ -313,7 +313,7 @@ Provide a comprehensive answer synthesizing the information above. Be factual an
                 "max_tokens": 500
             }),
         ]
-        
+
         last_error = None
         for endpoint_path, payload in endpoints_to_try:
             try:
@@ -322,22 +322,22 @@ Provide a comprehensive answer synthesizing the information above. Be factual an
                     url = f"{ASI_ONE_API_URL}/{endpoint_path}"
                 else:
                     url = f"{ASI_ONE_API_URL}/v1/{endpoint_path}"
-                
+
                 model_name = payload.get("model", "unknown")
                 print(f"🔗 Trying ASI:One: {url}")
                 print(f"   Model: {model_name}, Timeout: {ASI_ONE_TIMEOUT}s")
-                
+
                 response = requests.post(
                     url,
                     headers=headers,
                     json=payload,
                     timeout=ASI_ONE_TIMEOUT
                 )
-                
+
                 # Success!
                 if response.status_code == 200:
                     data = response.json()
-                    
+
                     # Try different response formats
                     summary = None
                     if "choices" in data and len(data["choices"]) > 0:
@@ -348,26 +348,26 @@ Provide a comprehensive answer synthesizing the information above. Be factual an
                         summary = data["text"]
                     elif "output" in data:
                         summary = data["output"]
-                    
+
                     if summary:
                         print(f"✓ ASI:One generated intelligent summary ({len(summary)} chars)")
                         print(f"   Working endpoint: {endpoint_path}")
                         return summary
                     else:
                         print(f"   ⚠️  Unexpected response format. Keys: {list(data.keys())}")
-                
+
                 # 404 - try next endpoint
                 elif response.status_code == 404:
                     print(f"   ✗ 404 Not Found, trying next...")
                     continue
-                
+
                 # Other errors - show details and try next
                 else:
                     print(f"   ✗ Status {response.status_code}")
                     print(f"   Response: {response.text[:200]}")
                     last_error = f"Status {response.status_code}: {response.text[:200]}"
                     continue
-                    
+
             except requests.exceptions.ConnectionError as e:
                 print(f"   ✗ Connection error: {str(e)[:100]}")
                 last_error = str(e)
@@ -376,12 +376,12 @@ Provide a comprehensive answer synthesizing the information above. Be factual an
                 print(f"   ✗ Error: {str(e)[:100]}")
                 last_error = str(e)
                 continue
-        
+
         # All endpoints failed
         print(f"⚠️  All ASI:One endpoints failed. Last error: {last_error}")
         print(f"   Please check ASI:One documentation for correct API endpoint")
         return None
-            
+
     except Exception as e:
         print(f"⚠️  ASI:One summarization failed: {e}")
         return None
@@ -395,24 +395,24 @@ def format_research_context(
 ) -> str:
     """
     Format research results into structured context for Reasoning Agent.
-    
+
     Args:
         query: Original query
         capsules: Relevant Knowledge Capsules
         web_results: Web search results
         asi_one_summary: Optional AI-generated summary from ASI:One
-        
+
     Returns:
         Formatted context string
     """
     context = f"# Research Context for Query: {query}\n\n"
-    
+
     # Add ASI:One summary if available
     if asi_one_summary:
         context += "## 🤖 AI-Generated Summary (ASI:One)\n\n"
         context += f"{asi_one_summary}\n\n"
         context += "---\n\n"
-    
+
     # Knowledge Capsules section
     if capsules:
         context += "## 📚 Verified Knowledge Capsules (Reusable)\n\n"
@@ -426,8 +426,8 @@ def format_research_context(
     else:
         context += "## 📚 Verified Knowledge Capsules\n\n"
         context += "_No relevant verified capsules found._\n\n"
-        
-    
+
+
     # Web search section
     if web_results:
         context += "## 🌐 External Sources\n\n"
@@ -438,13 +438,13 @@ def format_research_context(
     else:
         context += "## 🌐 External Sources\n\n"
         context += "_Web search disabled or no results found._\n\n"
-    
+
     # Summary
     context += "## 📊 Research Summary\n\n"
     context += f"- **Capsules Found:** {len(capsules)}\n"
     context += f"- **External Sources:** {len(web_results)}\n"
     context += f"- **Recommendation:** {'Use verified capsules as foundation' if capsules else 'Generate new reasoning from external sources'}\n"
-    
+
     return context
 
 
@@ -459,37 +459,37 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
         timestamp=datetime.now(timezone.utc),
         acknowledged_msg_id=msg.msg_id,
     ))
-    
+
     ctx.logger.info(f"📥 Research request from {sender}")
-    
+
     # Extract query text
     query_text = None
     for content in msg.content:
         if isinstance(content, TextContent):
             query_text = content.text
             break
-    
+
     if not query_text:
         ctx.logger.warning("No query text found in message")
         await ctx.send(sender, create_text_message(
             "❌ Error: No query text provided"
         ))
         return
-    
+
     ctx.logger.info(f"🔍 Researching: {query_text}")
-    
+
     # Step 1: Search Knowledge Capsules
     ctx.logger.info("📚 Searching Knowledge Capsules...")
     capsules = search_knowledge_capsules(query_text)
     ctx.logger.info(f"✓ Found {len(capsules)} relevant capsules")
-    
+
     # Step 2: Web search fallback if needed
     web_results = []
     if len(capsules) < 2 and ENABLE_WEB_SEARCH:
         ctx.logger.info("🌐 Performing web search fallback...")
         web_results = web_search_fallback(query_text)
         ctx.logger.info(f"✓ Found {len(web_results)} web results")
-    
+
     # Step 3: Generate AI summary if ASI:One is enabled
     asi_one_summary = None
     if web_results and ENABLE_ASI_ONE_SUMMARY and ASI_ONE_API_KEY:
@@ -499,20 +499,20 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             ctx.logger.info("✓ ASI:One summary generated successfully")
         else:
             ctx.logger.warning("⚠️  ASI:One summary failed, using standard format")
-    
+
     # Step 4: Format research context
     ctx.logger.info("📝 Formatting research context...")
     research_context = format_research_context(query_text, capsules, web_results, asi_one_summary)
-    
+
     # Step 5: Always send results back to the original sender (user/agent who asked)
     ctx.logger.info("📤 Sending research results to sender...")
     await ctx.send(sender, create_text_message(research_context))
     ctx.logger.info("✓ Research results sent to sender")
-    
+
     # Step 6: Optionally also notify Reasoning Agent (if configured and sender is not the reasoning agent)
     if REASONING_AGENT_ADDRESS and sender != REASONING_AGENT_ADDRESS:
         ctx.logger.info("📤 Also notifying Reasoning Agent for knowledge tracking...")
-        
+
         try:
             await ctx.send(
                 REASONING_AGENT_ADDRESS,
@@ -553,7 +553,7 @@ async def startup_handler(ctx: Context):
     ctx.logger.info(f"Port: {RESEARCH_PORT}")
     ctx.logger.info(f"Mailbox: Enabled")
     ctx.logger.info("=" * 60)
-    
+
     # Log configuration
     ctx.logger.info("=" * 60)
     ctx.logger.info("📍 Configuration:")
@@ -589,5 +589,5 @@ if __name__ == "__main__":
     print(f"🤖 ASI:One Summary: {'Enabled' if (ENABLE_ASI_ONE_SUMMARY and ASI_ONE_API_KEY) else 'Disabled'}")
     print("=" * 60)
     print("Waiting for research requests...\n")
-    
+
     research_agent.run()
