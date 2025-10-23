@@ -1,8 +1,8 @@
-import FeaturesSection from "../components/landing/features";
-import Footer from "../components/landing/footer";
-import Header from "../components/landing/header";
-import { HeroSection } from "../components/landing/hero-section";
-import IntegrationsSection from "../components/landing/integrations";
+import FeaturesSection from "../components/features";
+import Footer from "../components/footer";
+import Header from "../components/header";
+import { HeroSection } from "../components/hero-section";
+import IntegrationsSection from "../components/integrations";
 
 export default function Home() {
   return (
