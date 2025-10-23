@@ -10,6 +10,10 @@ venv/
 .env/
 .envrc
 .venv/
+agents_env/
+hyperon_env/
+**/agents_env/
+**/hyperon_env/
 
 # Environment variables
 *.env

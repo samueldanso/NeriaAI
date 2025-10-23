@@ -23,5 +23,9 @@ faiss-cpu>=1.7.4
 sentence-transformers>=2.2.0
 
 # MeTTa Reasoning Engine (optional - complex build requirements)
+# Uncomment the line below to enable MeTTa reasoning:
 # hyperon @ git+https://github.com/trueagi-io/hyperon-experimental.git#subdirectory=python
+#
+# Or use pip install directly:
+# pip install git+https://github.com/trueagi-io/hyperon-experimental.git#subdirectory=python
 

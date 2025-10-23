@@ -171,7 +171,7 @@ def generate_reasoning_chain(
         domain_knowledge.extend(rules)
         
         # Query causal relationships
-        causes = rag.query_causal_relationships(concept)
+        causes = rag.query_causes(concept)
         if causes:
             domain_knowledge.append(f"{concept} causes: {', '.join(causes)}")
     

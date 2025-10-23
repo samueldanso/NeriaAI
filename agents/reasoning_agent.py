@@ -140,8 +140,31 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     # Check if MeTTa is available
     if METTA_AVAILABLE and reasoning_rag:
         # MeTTa reasoning enabled - classify, extract concepts, generate chain
+        ctx.logger.info("🧠 Using MeTTa Knowledge Graph...")
+        
         reasoning_type = classify_reasoning_type(query_text, ASI_ONE_API_KEY)
+        ctx.logger.info(f"  • Reasoning Type: {reasoning_type}")
+        
         concepts = extract_key_concepts(query_text, ASI_ONE_API_KEY)
+        ctx.logger.info(f"  • Key Concepts: {', '.join(concepts)}")
+        
+        # Query MeTTa knowledge for relevant patterns
+        ctx.logger.info("  • Querying MeTTa knowledge graph...")
+        patterns = reasoning_rag.query_reasoning_pattern(reasoning_type)
+        if patterns:
+            ctx.logger.info(f"    ✓ Found {len(patterns)} reasoning pattern(s)")
+            for i, pattern in enumerate(patterns[:3], 1):  # Show first 3
+                ctx.logger.info(f"      [{i}] {pattern[:80]}...")
+        
+        # Query domain-specific knowledge
+        domain_knowledge = []
+        for concept in concepts[:3]:  # Show first 3 concepts
+            rules = reasoning_rag.query_domain_rule(concept)
+            if rules:
+                domain_knowledge.extend(rules)
+                ctx.logger.info(f"    ✓ Domain knowledge for '{concept}': {len(rules)} rule(s)")
+                for rule in rules[:2]:  # Show first 2 rules
+                    ctx.logger.info(f"      → {rule[:80]}...")
         
         reasoning_chain = generate_reasoning_chain(
             query=query_text,
@@ -151,6 +174,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             context=context_from_research,
             api_key=ASI_ONE_API_KEY
         )
+        
+        ctx.logger.info(f"  ✓ MeTTa-enhanced reasoning generated (conf: {reasoning_chain.get('confidence', 0):.2f})")
     else:
         # Fallback mode (no MeTTa) - simple reasoning
         reasoning_type = "causal"
@@ -337,18 +362,47 @@ async def startup_handler(ctx: Context):
             metta_instance = MeTTa()
             initialize_reasoning_knowledge(metta_instance)
             reasoning_rag = GeneralRAG(metta_instance)
-            ctx.logger.info(f"🧠 Reasoning Agent ready (MeTTa enabled)")
+            
+            # Show MeTTa knowledge graph statistics
+            ctx.logger.info("=" * 60)
+            ctx.logger.info("🧠 MeTTa Knowledge Graph Initialized")
+            ctx.logger.info("=" * 60)
+            
+            # Test queries to show available knowledge
+            available_patterns = reasoning_rag.query_reasoning_pattern("causal")
+            ctx.logger.info(f"  Reasoning Patterns: {len(available_patterns) if available_patterns else 0}")
+            if available_patterns and len(available_patterns) > 0:
+                ctx.logger.info(f"    Example: {available_patterns[0][:70]}...")
+            
+            validation_criteria = reasoning_rag.query_validation_criteria()
+            ctx.logger.info(f"  Validation Criteria: {len(validation_criteria) if validation_criteria else 0}")
+            if validation_criteria and len(validation_criteria) > 0:
+                ctx.logger.info(f"    Example: {validation_criteria[0][:70]}...")
+            
+            # Test domain knowledge
+            test_concept = "transformer"
+            test_rules = reasoning_rag.query_domain_rule(test_concept)
+            if test_rules:
+                ctx.logger.info(f"  Domain Knowledge (test): {len(test_rules)} rules for '{test_concept}'")
+                ctx.logger.info(f"    Example: {test_rules[0][:70]}...")
+            
+            ctx.logger.info("=" * 60)
+            ctx.logger.info("✅ MeTTa-Enhanced Reasoning Ready")
+            ctx.logger.info("=" * 60)
         except Exception as e:
-            ctx.logger.error(f"MeTTa init failed: {e}")
+            ctx.logger.error(f"❌ MeTTa init failed: {e}")
             metta_instance = None
             reasoning_rag = None
+            ctx.logger.info("🧠 Reasoning Agent ready (fallback mode)")
     else:
         # Silent fallback - no warning
-        ctx.logger.info("🧠 Reasoning Agent ready")
+        ctx.logger.info("🧠 Reasoning Agent ready (fallback mode)")
     
-    # Register Validation Agent if configured
+    # Validation agent configured (will communicate directly via address)
     if VALIDATION_AGENT_ADDRESS:
-        await ctx.register(VALIDATION_AGENT_ADDRESS)
+        ctx.logger.info(f"  Validation Agent: {VALIDATION_AGENT_ADDRESS[:20]}... ✓")
+    else:
+        ctx.logger.warning("  Validation Agent: Not configured")
 
 
 @reasoning_agent.on_event("shutdown")
