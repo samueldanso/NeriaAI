@@ -1,4 +1,4 @@
-NeriaAI — Decentralized Human-AI Platform for Knowledge Work
+# NeriaAI — Decentralized AI Reasoning Platform for Knowledge Work
 
 A decentralized human-AI reasoning platform that transforms AI outputs into permanent, verifiable, and reusable knowledge assets you can trust. It leverages a multi-agent reasoning and validation system powered by Fetch.ai, the ASI Alliance stack, and IPFS — deployed on Base.
 
@@ -10,12 +10,12 @@ A decentralized human-AI reasoning platform that transforms AI outputs into perm
 
 ## 🔥 The Problem
 
-Today millions of researchers, developers, and professionals rely on AI for critical decisions, but face fundamental trust issues:
+Today developers, researchers, and professionals constantly seek clear, reliable AI answers — millions use ChatGPT and Claude for critical decisions, but:
 
 -   ❌ **AI provides fluent but unverified outputs** (73% of developers don't fully trust AI code)
 -   ❌ **Stack Overflow and forums have conflicting or outdated answers**
--   ❌ **Professionals waste critical time manually cross-checking AI results**
--   ❌ **Most answers are disposable** — leading to repetitive effort and high information decay
+-   ❌ **Professionals waste hours manually cross-checking AI results**
+-   ❌ **Most answers are disposable** — same questions asked thousands of times
 
 **Result:** We generate billions of AI answers daily, but build **zero collective knowledge**.
 
@@ -23,11 +23,11 @@ Today millions of researchers, developers, and professionals rely on AI for crit
 
 ## 💡 The Solution
 
-Neria introduces an **autonomous multi-agent validation layer** uses five collaborating agents to research, reason, and validate AI answers, then mints each verified result as a Knowledge Capsule NFT on Base L2 with IPFS storage and vector search for discovery.
+Neria introduces an **autonomous multi-agent validation layer** that turns AI conversations into permanent, verified knowledge assets.
 
 **Think:** Perplexity meets Stack Overflow — where autonomous AI agents verify every answer and blockchain makes knowledge permanent.
 
-Built for researchers, developers, and professionals who need **trustworthy AI reasoning**, not guesswork.
+Built for researchers, developers, and professionals who need **verified AI reasoning**, not guesswork.
 
 ### **How It Works:**
 
