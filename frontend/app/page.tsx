@@ -1,9 +1,9 @@
-import CTASection from './_components/cta-section'
-import FeaturesSection from './_components/features'
-import Footer from './_components/footer'
-import Header from './_components/header'
-import { HeroSection } from './_components/hero-section'
-import IntegrationsSection from './_components/integrations'
+import CTASection from '../components/landing/cta-section'
+import FeaturesSection from '../components/landing/features'
+import Footer from '../components/landing/footer'
+import Header from '../components/landing/header'
+import { HeroSection } from '../components/landing/hero-section'
+import IntegrationsSection from '../components/landing/integrations'
 
 export default function Home() {
 	return (

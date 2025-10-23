@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
-import { Providers } from '@/components/providers'
-import Navigation from './components/navigation'
+
 import { env } from '@/env'
 import './globals.css'
+import { Providers } from '@/components/providers'
 
 const garnett = localFont({
 	src: [
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 		template: '%s | Neria AI - Human-AI Knowledge Work',
 	},
 	description:
-		'Neria is a decentralized, human-AI reasoning platform for knowledge work that transforms fragmented AI outputs into trusted, expert-validated, and reusable structured knowledge.',
+		'Neria is a decentralized human-AI reasoning platform that transforms AI outputs into permanent, verifiable, and reusable knowledge assets you can trust.',
 	keywords: [
 		'neria',
 		'neria ai',
@@ -47,14 +47,14 @@ export const metadata: Metadata = {
 		url: env.NEXT_PUBLIC_APP_URL,
 		title: 'Neria  AI - Human-AI Knowledge Work',
 		description:
-			'Neria is a decentralized, human-AI reasoning platform for knowledge work that transforms fragmented AI outputs into trusted, expert-validated, and reusable structured knowledge.',
+			'Neria is a decentralized human-AI reasoning platform that transforms AI outputs into permanent, verifiable, and reusable knowledge assets you can trust.',
 		siteName: 'Neria AI - Human-AI Knowledge Work',
 	},
 	twitter: {
 		card: 'summary_large_image',
 		title: 'Neria AI - Human-AI Knowledge Work',
 		description:
-			'Neria is a decentralized, human-AI reasoning platform for knowledge work that transforms fragmented AI outputs into trusted, expert-validated, and reusable structured knowledge.',
+			'Neria is a decentralized human-AI reasoning platform that transforms AI outputs into permanent, verifiable, and reusable knowledge assets you can trust.',
 		site: '@neriaai',
 		creator: '@neriaai',
 	},
@@ -83,10 +83,7 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body className={`${garnett.variable} font-sans antialiased`}>
-				<Providers>
-					<Navigation />
-					{children}
-				</Providers>
+				<Providers>{children}</Providers>
 			</body>
 		</html>
 	)

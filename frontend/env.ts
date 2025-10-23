@@ -5,7 +5,7 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url(),
     NEXT_PUBLIC_PRIVY_APP_ID: z.string().min(1),
-    NEXT_PUBLIC_CHAIN_ID: z.string().default("11155111"),
+    NEXT_PUBLIC_CHAIN_ID: z.string().default("84532"),
   },
   runtimeEnv: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
