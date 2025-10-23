@@ -80,7 +80,7 @@ export function HeroSection() {
 									type="text"
 									value={inputValue}
 									onChange={(e) => setInputValue(e.target.value)}
-									placeholder="Ask Neria complex questions.."
+									placeholder="Ask Neria a complex question.."
 									className="flex-1 border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 h-12 text-base"
 								/>
 								<Button
