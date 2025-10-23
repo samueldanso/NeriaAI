@@ -1,29 +1,29 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { Gemini, GooglePaLM, MediaWiki } from "@/components/logos";
+import { ASIOne, DuckDuckGo, SingularityNET } from "@/components/logos";
 import { Button } from "@/components/ui/button";
 
 export default function IntegrationsSection() {
   return (
     <section id="integrations">
-      <div className="bg-muted dark:bg-background rounded-xl py-24 md:py-32">
+      <div className="bg-muted dark:bg-background rounded-xl py-16 md:py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mx-auto max-w-md px-6 [mask-image:radial-gradient(ellipse_100%_100%_at_50%_0%,#000_70%,transparent_100%)]">
-            <div className="bg-background dark:bg-muted/50 rounded-xl border px-6 pb-12 pt-3 shadow-xl">
+            <div className="bg-background dark:bg-muted/50 rounded-xl border px-6 pb-8 pt-3 shadow-xl">
               <Integration
-                icon={<Gemini />}
-                name="Gemini"
-                description="Google's advanced AI model for multi-modal reasoning."
+                icon={<ASIOne />}
+                name="ASI:One"
+                description="Advanced AI reasoning powered by ASI Alliance for multi-agent validation."
               />
               <Integration
-                icon={<MediaWiki />}
-                name="MediaWiki"
-                description="Structured knowledge from Wikipedia and Wikimedia projects."
+                icon={<SingularityNET />}
+                name="SingularityNET MeTTa"
+                description="Structured knowledge representation and logical reasoning framework."
               />
               <Integration
-                icon={<GooglePaLM />}
-                name="Google PaLM"
-                description="Google's Pathways Language Model for natural language tasks."
+                icon={<DuckDuckGo />}
+                name="DuckDuckGo Search"
+                description="Privacy-focused web search for real-time information gathering."
               />
             </div>
           </div>
@@ -61,7 +61,7 @@ const Integration = ({
   description: string;
 }) => {
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-dashed py-3 last:border-b-0">
+    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-border/40 py-3 last:border-b-0">
       <div className="bg-muted border-foreground/5 flex size-12 items-center justify-center rounded-lg border">
         {icon}
       </div>

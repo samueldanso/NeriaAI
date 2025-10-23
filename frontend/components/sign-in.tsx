@@ -14,7 +14,7 @@ export const WalletConnect = () => {
   if (authenticated && user) {
     return (
       <span className="flex items-center gap-x-2 font-medium">
-        <span className="hidden md:block">
+        <span className="hidden md:block text-sm">
           {user.wallet?.address
             ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
             : "Connected"}
@@ -23,13 +23,17 @@ export const WalletConnect = () => {
         <button
           onClick={handleDisconnect}
           type="button"
-          className="cursor-pointer"
+          className="cursor-pointer p-1 hover:bg-muted rounded transition-colors"
         >
-          <ExitIcon className="size-4" />
+          <ExitIcon className="size-4 text-muted-foreground" />
         </button>
       </span>
     );
   }
 
-  return <Button onClick={login}>Connect Wallet</Button>;
+  return (
+    <Button onClick={login} className="font-medium px-4 py-2">
+      Sign in
+    </Button>
+  );
 };

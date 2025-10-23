@@ -1,43 +1,28 @@
+import { Heart } from "lucide-react";
 import Link from "next/link";
-
-const links = [
-  {
-    title: "Features",
-    href: "#features",
-  },
-  {
-    title: "Capsules",
-    href: "/capsules",
-  },
-];
 
 export default function Footer() {
   return (
-    <footer className="border-t py-12">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <div className="flex items-center gap-8">
-            <span className="text-muted-foreground order-last block text-sm md:order-first">
-              © {new Date().getFullYear()} Neria AI. Built at ETHOnline 2025
-            </span>
-          </div>
+    <footer className="relative">
+      {/* Faint border at top */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-border/40"></div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex flex-wrap gap-6 text-sm">
-              {links.map((link, index) => (
-                <Link
-                  key={index}
-                  href={link.href}
-                  className="text-muted-foreground hover:text-foreground block transition-colors duration-150"
-                >
-                  {link.title}
-                </Link>
-              ))}
+      <div className="py-12">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex flex-wrap items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-sm">
+                © 2025 Neria AI Built with
+              </span>
+              <Heart className="size-4 fill-red-500 text-red-500" />
+              <span className="text-muted-foreground text-sm">
+                at ETHOnline 2025
+              </span>
             </div>
 
             <div className="flex items-center gap-4">
               <Link
-                href="https://github.com/samueldanso/NeriaAI"
+                href="https://github.com/samueldanso/neria-ai-ethonline-2025"
                 target="_blank"
                 rel="noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"

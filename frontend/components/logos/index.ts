@@ -1,3 +1,3 @@
-export { default as Gemini } from './Gemini'
-export { default as GooglePaLM } from './GooglePaLM'
-export { default as MediaWiki } from './MediaWiki'
+export { default as ASIOne } from "./ASIOne";
+export { default as DuckDuckGo } from "./DuckDuckGo";
+export { default as SingularityNET } from "./SingularityNET";

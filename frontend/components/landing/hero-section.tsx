@@ -1,17 +1,39 @@
-import { ArrowRight } from "lucide-react";
-import Image from "next/image";
+"use client";
+
+import { usePrivy } from "@privy-io/react-auth";
+import { ArrowRight, Send } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function HeroSection() {
+  const [inputValue, setInputValue] = useState("");
+  const { authenticated, login } = usePrivy();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+
+    if (authenticated) {
+      window.location.href = "/chat";
+    } else {
+      // Trigger sign-in
+      login();
+    }
+  };
+
   return (
     <section className="relative overflow-hidden py-16 sm:py-20 md:py-24 lg:py-28">
+      {/* Improved radial gradient background */}
+      <div className="absolute inset-0 bg-gradient-radial from-blue-500/20 via-purple-500/10 to-transparent dark:from-blue-400/30 dark:via-purple-400/20 dark:to-transparent" />
+
       <div className="container mx-auto px-4">
         {/* Announcement Badge */}
         <div className="mb-8 flex justify-center">
           <Link
             href="#features"
-            className="group inline-flex items-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-medium transition-all hover:bg-accent hover:shadow-md"
+            className="group inline-flex items-center gap-2 rounded-full border bg-background/80 backdrop-blur-sm px-4 py-2 text-sm font-medium transition-all hover:bg-accent hover:shadow-md"
           >
             <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
               NEW
@@ -24,15 +46,15 @@ export function HeroSection() {
         </div>
 
         {/* Hero Headline */}
-        <div className="mx-auto max-w-5xl text-center">
-          <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+        <div className="mx-auto max-w-4xl text-center">
+          <h1 className="mb-6 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
             <span className="block text-foreground">Where AI outputs</span>
             <span className="relative mt-2 block">
               <span className="text-foreground line-through decoration-primary/30 decoration-2">
                 become
               </span>{" "}
               <span
-                className="relative inline-block bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 bg-clip-text text-transparent"
+                className="relative inline-block bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent"
                 style={{
                   fontFamily: "var(--font-garnett)",
                   fontStyle: "italic",
@@ -45,48 +67,42 @@ export function HeroSection() {
           </h1>
 
           {/* Subheading */}
-          <p className="mx-auto mb-10 max-w-2xl text-base text-muted-foreground sm:text-lg md:text-xl lg:leading-relaxed">
+          <p className="mx-auto mb-10 max-w-xl text-sm text-muted-foreground sm:text-base md:text-lg">
             Transform fragmented AI responses into expert-validated, reusable
             Knowledge Capsules. Built by AI agents, verified by human experts.
           </p>
 
-          {/* CTA Button */}
-          <div className="flex justify-center">
-            <Button
-              asChild
-              size="lg"
-              className="group h-12 gap-2 rounded-full px-8 text-base font-semibold shadow-lg transition-all hover:shadow-xl"
-            >
-              <Link href="/capsules">
-                Try Neria AI
-                <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Product Preview */}
-        <div className="mx-auto mt-16 max-w-6xl">
-          <div className="relative overflow-hidden rounded-2xl border bg-muted/30 shadow-2xl backdrop-blur-sm">
-            <Image
-              src="/images/hero-mock.png"
-              alt="Neria AI Platform Interface - Expert-validated knowledge capsules"
-              width={1920}
-              height={1080}
-              priority
-              className="size-full object-cover"
-            />
+          {/* Fake Chat Input Box - Lovable Style */}
+          <div className="mx-auto mb-8 max-w-2xl">
+            <form onSubmit={handleSubmit} className="relative">
+              <div className="flex items-center gap-2 rounded-2xl border bg-background/80 backdrop-blur-sm p-2 shadow-lg">
+                <Input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Ask anything... Our 5-agent system will research, reason, and validate your answer."
+                  className="flex-1 border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90"
+                >
+                  <Send className="size-4" />
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
 
-      {/* Background gradient decoration */}
+      {/* Enhanced background gradient decoration */}
       <div
         className="pointer-events-none absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
         aria-hidden="true"
       >
         <div
-          className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-primary to-blue-400 opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
+          className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-blue-500/30 via-purple-500/20 to-pink-500/10 opacity-40 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
           style={{
             clipPath:
               "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",

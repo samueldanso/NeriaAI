@@ -1,6 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
+import { WalletConnect } from "@/components/sign-in";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { WalletConnect } from "@/components/wallet-connect";
 
 const navLinks = [
   {
@@ -12,20 +13,29 @@ const navLinks = [
     href: "#integrations",
   },
   {
-    title: "Capsules",
+    title: "Knowledge",
     href: "/capsules",
   },
 ];
 
 export default function Header() {
   return (
-    <header className="border-b">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
-        <Link href="/" className="flex items-center">
+    <header className="relative border-b border-border/40">
+      <nav className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-6">
+        {/* Logo with icon */}
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/icon.png"
+            alt="Neria AI"
+            width={24}
+            height={24}
+            className="w-6 h-6"
+          />
           <span className="text-xl font-bold">Neria AI</span>
         </Link>
 
-        <div className="hidden items-center gap-6 md:flex">
+        {/* Center navigation links */}
+        <div className="hidden items-center gap-8 md:flex">
           {navLinks.map((link, index) => (
             <Link
               key={index}
@@ -37,7 +47,8 @@ export default function Header() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right side actions */}
+        <div className="flex items-center gap-3">
           <ThemeToggle />
           <WalletConnect />
         </div>
