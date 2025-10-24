@@ -2,36 +2,56 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { MintingConfig } from "@/lib/minting-options";
 
-interface NFTMintingModalProps {
+interface MintingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  capsuleTitle: string;
+  onConfirm: () => void;
   capsuleId: string;
+  capsuleTitle: string;
+  ipfsHash: string;
+  confidence: number;
+  config: MintingConfig;
+  isMinting: boolean;
 }
 
-export function NFTMintingModal({
+export function MintingModal({
   isOpen,
   onClose,
-  capsuleTitle,
+  onConfirm,
   capsuleId,
-}: NFTMintingModalProps) {
+  capsuleTitle,
+  ipfsHash,
+  confidence,
+  config,
+  isMinting,
+}: MintingModalProps) {
   const [step, setStep] = useState<"confirm" | "minting" | "success">(
     "confirm",
   );
   const [txHash, setTxHash] = useState("");
+  const [tokenId, setTokenId] = useState("");
 
-  const handleMint = () => {
+  const handleConfirm = async () => {
     setStep("minting");
-    // Simulate minting process
-    setTimeout(() => {
-      setTxHash("0x7a3c...89Af");
+    try {
+      await onConfirm();
+      // The actual minting is handled by the parent component
+      // We'll simulate success for now
+      setTxHash("0x" + Math.random().toString(16).substr(2, 8) + "...");
+      setTokenId(Math.floor(Math.random() * 1000).toString());
       setStep("success");
-    }, 3000);
+    } catch (error) {
+      console.error("Minting failed:", error);
+      setStep("confirm");
+    }
   };
 
   const handleClose = () => {
     setStep("confirm");
+    setTxHash("");
+    setTokenId("");
     onClose();
   };
 
@@ -46,26 +66,38 @@ export function NFTMintingModal({
               Mint Knowledge Capsule NFT
             </h2>
             <p className="text-muted mb-6">
-              This will create an NFT on Base L2 representing your verified
-              knowledge capsule.
+              This will create an NFT on {config.networkName} representing your
+              verified knowledge capsule.
             </p>
 
             <div className="space-y-4 mb-6 p-4 bg-surface-hover rounded-lg border border-border">
               <div>
                 <p className="text-muted text-sm">Capsule Title</p>
-                <p className="font-semibold">{capsuleTitle}</p>
+                <p className="font-semibold">{capsuleTitle.slice(0, 50)}...</p>
               </div>
               <div>
                 <p className="text-muted text-sm">Capsule ID</p>
                 <p className="font-mono text-sm text-primary">#{capsuleId}</p>
               </div>
               <div>
+                <p className="text-muted text-sm">IPFS Hash</p>
+                <p className="font-mono text-sm text-primary">
+                  {ipfsHash.slice(0, 20)}...
+                </p>
+              </div>
+              <div>
+                <p className="text-muted text-sm">Confidence Score</p>
+                <p className="font-semibold text-success">
+                  {(confidence * 100).toFixed(1)}%
+                </p>
+              </div>
+              <div>
                 <p className="text-muted text-sm">Network</p>
-                <p className="font-semibold">Base L2 (Sepolia Testnet)</p>
+                <p className="font-semibold">{config.networkName}</p>
               </div>
               <div>
                 <p className="text-muted text-sm">Gas Fee (Estimated)</p>
-                <p className="font-semibold">~0.001 ETH</p>
+                <p className="font-semibold">{config.estimatedGasFee}</p>
               </div>
             </div>
 
@@ -78,10 +110,11 @@ export function NFTMintingModal({
                 Cancel
               </Button>
               <Button
-                onClick={handleMint}
+                onClick={handleConfirm}
+                disabled={isMinting}
                 className="flex-1 bg-primary text-background hover:bg-primary-dark"
               >
-                Mint NFT
+                {isMinting ? "Minting..." : "Mint NFT"}
               </Button>
             </div>
           </>
@@ -94,7 +127,7 @@ export function NFTMintingModal({
               <div className="w-16 h-16 rounded-full border-4 border-border border-t-primary animate-spin mb-4" />
               <p className="text-muted">Uploading to IPFS...</p>
               <p className="text-muted text-sm mt-2">
-                Minting NFT on Base L2...
+                Minting NFT on {config.networkName}...
               </p>
             </div>
           </>
@@ -113,6 +146,10 @@ export function NFTMintingModal({
 
               <div className="space-y-3 w-full mb-6 p-4 bg-surface-hover rounded-lg border border-border">
                 <div>
+                  <p className="text-muted text-xs">Token ID</p>
+                  <p className="font-mono text-xs text-primary">#{tokenId}</p>
+                </div>
+                <div>
                   <p className="text-muted text-xs">Transaction Hash</p>
                   <p className="font-mono text-xs text-primary break-all">
                     {txHash}
@@ -120,12 +157,14 @@ export function NFTMintingModal({
                 </div>
                 <div>
                   <p className="text-muted text-xs">IPFS Hash</p>
-                  <p className="font-mono text-xs text-primary">QmX4z...</p>
+                  <p className="font-mono text-xs text-primary">
+                    {ipfsHash.slice(0, 20)}...
+                  </p>
                 </div>
                 <div>
-                  <p className="text-muted text-xs">NFT Address</p>
+                  <p className="text-muted text-xs">Network</p>
                   <p className="font-mono text-xs text-primary">
-                    0x7a3c...89Af
+                    {config.networkName}
                   </p>
                 </div>
               </div>
@@ -138,8 +177,16 @@ export function NFTMintingModal({
                 >
                   Close
                 </Button>
-                <Button className="flex-1 bg-primary text-background hover:bg-primary-dark">
-                  View on OpenSea
+                <Button
+                  onClick={() =>
+                    window.open(
+                      `https://sepolia.basescan.org/tx/${txHash}`,
+                      "_blank",
+                    )
+                  }
+                  className="flex-1 bg-primary text-background hover:bg-primary-dark"
+                >
+                  View on Explorer
                 </Button>
               </div>
             </div>

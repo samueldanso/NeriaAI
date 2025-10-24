@@ -1,18 +1,21 @@
-"use client"
+"use client";
 
 interface MintingStatusCardProps {
-  status: "idle" | "uploading" | "validating" | "minting" | "completed"
-  progress: number
+  status: "idle" | "uploading" | "validating" | "minting" | "completed";
+  progress: number;
 }
 
-export function MintingStatusCard({ status, progress }: MintingStatusCardProps) {
+export function MintingStatusCard({
+  status,
+  progress,
+}: MintingStatusCardProps) {
   const statusMessages = {
     idle: "Ready to mint",
     uploading: "Uploading to IPFS...",
     validating: "Validating with agents...",
     minting: "Minting NFT on Base L2...",
     completed: "NFT minted successfully!",
-  }
+  };
 
   const statusColors = {
     idle: "bg-border",
@@ -20,7 +23,7 @@ export function MintingStatusCard({ status, progress }: MintingStatusCardProps) 
     validating: "bg-secondary",
     minting: "bg-accent",
     completed: "bg-success",
-  }
+  };
 
   return (
     <div className="card-base">
@@ -38,5 +41,5 @@ export function MintingStatusCard({ status, progress }: MintingStatusCardProps) 
         </div>
       </div>
     </div>
-  )
+  );
 }

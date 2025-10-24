@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react";
 
 interface AgentStatusPanelProps {
-  status: string
+  status: string;
 }
 
 interface AgentState {
-  name: string
-  icon: string
-  status: "idle" | "processing" | "completed" | "error"
-  progress: number
-  description: string
+  name: string;
+  icon: string;
+  status: "idle" | "processing" | "completed" | "error";
+  progress: number;
+  description: string;
 }
 
 export function AgentStatusPanel({ status }: AgentStatusPanelProps) {
@@ -51,37 +51,40 @@ export function AgentStatusPanel({ status }: AgentStatusPanelProps) {
       progress: 0,
       description: "Minting Knowledge Capsule NFT",
     },
-  ])
+  ]);
 
   // Simulate agent processing
   useEffect(() => {
     if (status === "processing") {
       const interval = setInterval(() => {
         setAgents((prev) => {
-          const updated = [...prev]
-          let activeIndex = updated.findIndex((a) => a.status === "processing")
+          const updated = [...prev];
+          let activeIndex = updated.findIndex((a) => a.status === "processing");
 
           if (activeIndex === -1) {
-            activeIndex = 0
+            activeIndex = 0;
           }
 
           if (activeIndex < updated.length) {
-            updated[activeIndex].progress = Math.min(updated[activeIndex].progress + Math.random() * 30, 95)
+            updated[activeIndex].progress = Math.min(
+              updated[activeIndex].progress + Math.random() * 30,
+              95,
+            );
 
             if (updated[activeIndex].progress > 80) {
-              updated[activeIndex].status = "completed"
+              updated[activeIndex].status = "completed";
               if (activeIndex + 1 < updated.length) {
-                updated[activeIndex + 1].status = "processing"
-                updated[activeIndex + 1].progress = 10
+                updated[activeIndex + 1].status = "processing";
+                updated[activeIndex + 1].progress = 10;
               }
             }
           }
 
-          return updated
-        })
-      }, 500)
+          return updated;
+        });
+      }, 500);
 
-      return () => clearInterval(interval)
+      return () => clearInterval(interval);
     } else if (status === "idle") {
       setAgents((prev) =>
         prev.map((a) => ({
@@ -89,35 +92,35 @@ export function AgentStatusPanel({ status }: AgentStatusPanelProps) {
           status: "idle",
           progress: 0,
         })),
-      )
+      );
     }
-  }, [status])
+  }, [status]);
 
   const getStatusColor = (agentStatus: string) => {
     switch (agentStatus) {
       case "completed":
-        return "bg-success"
+        return "bg-success";
       case "processing":
-        return "bg-primary animate-pulse"
+        return "bg-primary animate-pulse";
       case "error":
-        return "bg-error"
+        return "bg-error";
       default:
-        return "bg-border"
+        return "bg-border";
     }
-  }
+  };
 
   const getStatusIcon = (agentStatus: string) => {
     switch (agentStatus) {
       case "completed":
-        return "✓"
+        return "✓";
       case "processing":
-        return "⟳"
+        return "⟳";
       case "error":
-        return "✕"
+        return "✕";
       default:
-        return "○"
+        return "○";
     }
-  }
+  };
 
   return (
     <div className="card-base h-full flex flex-col">
@@ -174,12 +177,14 @@ export function AgentStatusPanel({ status }: AgentStatusPanelProps) {
       {/* Agent Details */}
       <div className="mt-4 p-3 bg-surface-hover rounded text-xs text-muted space-y-1">
         <p>
-          <strong>Completed:</strong> {agents.filter((a) => a.status === "completed").length}/{agents.length}
+          <strong>Completed:</strong>{" "}
+          {agents.filter((a) => a.status === "completed").length}/
+          {agents.length}
         </p>
         <p className="text-xs">
           <strong>Consensus Required:</strong> 2/3 validators
         </p>
       </div>
     </div>
-  )
+  );
 }

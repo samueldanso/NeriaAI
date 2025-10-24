@@ -1,15 +1,19 @@
-"use client"
+"use client";
 
 interface ReasoningVisualizationProps {
-  reasoning: string
+  reasoning: string;
 }
 
-export function ReasoningVisualization({ reasoning }: ReasoningVisualizationProps) {
-  const steps = reasoning.split("\n").filter((s) => s.trim())
+export function ReasoningVisualization({
+  reasoning,
+}: ReasoningVisualizationProps) {
+  const steps = reasoning.split("\n").filter((s) => s.trim());
 
   return (
     <div className="card-base bg-surface-hover border-primary/30">
-      <h4 className="font-semibold text-sm mb-3 text-primary">Reasoning Chain</h4>
+      <h4 className="font-semibold text-sm mb-3 text-primary">
+        Reasoning Chain
+      </h4>
       <div className="space-y-2">
         {steps.map((step, i) => (
           <div key={i} className="flex gap-3">
@@ -21,5 +25,5 @@ export function ReasoningVisualization({ reasoning }: ReasoningVisualizationProp
         ))}
       </div>
     </div>
-  )
+  );
 }

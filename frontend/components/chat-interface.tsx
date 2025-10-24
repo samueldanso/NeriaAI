@@ -1,35 +1,35 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { MessageBubble } from "@/components/message-bubble"
-import { ReasoningVisualization } from "@/components/reasoning-visualization"
+import type React from "react";
+import { useState } from "react";
+import { MessageBubble } from "@/components/message-bubble";
+import { ReasoningVisualization } from "@/components/reasoning-visualization";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Message {
-  role: string
-  content: string
-  reasoning?: string
-  capsuleId?: string
+  role: string;
+  content: string;
+  reasoning?: string;
+  capsuleId?: string;
 }
 
 interface ChatInterfaceProps {
-  messages: Message[]
-  onSendMessage: (message: string) => void
+  messages: Message[];
+  onSendMessage: (message: string) => void;
 }
 
 export function ChatInterface({ messages, onSendMessage }: ChatInterfaceProps) {
-  const [input, setInput] = useState("")
-  const [expandedMessage, setExpandedMessage] = useState<number | null>(null)
+  const [input, setInput] = useState("");
+  const [expandedMessage, setExpandedMessage] = useState<number | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (input.trim()) {
-      onSendMessage(input)
-      setInput("")
+      onSendMessage(input);
+      setInput("");
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -39,7 +39,9 @@ export function ChatInterface({ messages, onSendMessage }: ChatInterfaceProps) {
           <div className="h-full flex items-center justify-center text-center">
             <div>
               <h2 className="text-2xl font-bold mb-2">Ask Anything</h2>
-              <p className="text-muted">Get verified answers powered by autonomous AI agents</p>
+              <p className="text-muted">
+                Get verified answers powered by autonomous AI agents
+              </p>
               <div className="mt-6 grid grid-cols-2 gap-2 max-w-xs mx-auto">
                 {[
                   "How does React useMemo work?",
@@ -64,7 +66,9 @@ export function ChatInterface({ messages, onSendMessage }: ChatInterfaceProps) {
               <MessageBubble
                 message={msg}
                 isUser={msg.role === "user"}
-                onExpandReasoning={() => setExpandedMessage(expandedMessage === i ? null : i)}
+                onExpandReasoning={() =>
+                  setExpandedMessage(expandedMessage === i ? null : i)
+                }
               />
               {expandedMessage === i && msg.reasoning && (
                 <div className="mt-2 ml-4">
@@ -85,11 +89,14 @@ export function ChatInterface({ messages, onSendMessage }: ChatInterfaceProps) {
             placeholder="Ask a question..."
             className="flex-1 bg-surface border-border"
           />
-          <Button type="submit" className="bg-primary text-background hover:bg-primary-dark">
+          <Button
+            type="submit"
+            className="bg-primary text-background hover:bg-primary-dark"
+          >
             Send
           </Button>
         </div>
       </form>
     </div>
-  )
+  );
 }

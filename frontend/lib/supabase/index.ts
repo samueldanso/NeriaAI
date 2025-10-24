@@ -1,17 +1,17 @@
 // Export Supabase client
-export { createClient } from './client'
 
 // Export capsule functions and types
 export {
-	createCapsule,
-	updateCapsuleIPFS,
-	updateCapsuleNFT,
-	getCapsuleById,
-	getCapsules,
-	getCapsulesByCreator,
-	searchCapsules,
-	incrementCapsuleView,
-	type KnowledgeCapsule,
-	type CreateCapsuleInput,
-	type CapsuleSearchResult,
-} from './capsules'
+  type CapsuleSearchResult,
+  type CreateCapsuleInput,
+  createCapsule,
+  getCapsuleById,
+  getCapsules,
+  getCapsulesByCreator,
+  incrementCapsuleView,
+  type KnowledgeCapsule,
+  searchCapsules,
+  updateCapsuleIPFS,
+  updateCapsuleNFT,
+} from "./capsules";
+export { createClient } from "./client";
