@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { usePrivy } from '@privy-io/react-auth'
+import {
+	processCapsuleStorage,
+	extractCapsuleDataFromResponse,
+	isCapsuleReadyForStorage,
+} from '@/lib/storage-service'
 
 interface Message {
 	id: string
@@ -27,7 +33,9 @@ export default function ChatPage() {
 	const [input, setInput] = useState('')
 	const [isLoading, setIsLoading] = useState(false)
 	const [currentAgentStep, setCurrentAgentStep] = useState(0)
+	const [isStoringCapsule, setIsStoringCapsule] = useState(false)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
+	const { user } = usePrivy()
 
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -166,6 +174,67 @@ export default function ChatPage() {
 				}
 
 				setMessages((prev) => [...prev, assistantMessage])
+
+				// Check if capsule is ready for storage
+				if (isCapsuleReadyForStorage(data.response) && user?.wallet?.address) {
+					console.log('🔄 Capsule ready for storage, initiating workflow...')
+					setIsStoringCapsule(true)
+
+					// Show storage progress message
+					const storageStatusMessage: Message = {
+						id: `storage-${Date.now()}`,
+						role: 'agent',
+						content:
+							'💾 Storing Knowledge Capsule...\n\n⏳ Step 1: Saving to database...',
+						timestamp: new Date(),
+					}
+					setMessages((prev) => [...prev, storageStatusMessage])
+
+					// Extract capsule data from response
+					const capsuleData = extractCapsuleDataFromResponse(
+						data.response,
+						userMessage.content,
+						user.wallet.address
+					)
+
+					if (capsuleData) {
+						try {
+							// Process storage (Supabase + IPFS)
+							const storageResult = await processCapsuleStorage(capsuleData)
+
+							if (storageResult.success) {
+								// Show success message
+								const successMessage: Message = {
+									id: `storage-success-${Date.now()}`,
+									role: 'agent',
+									content: `🎉 **Knowledge Capsule Stored Successfully!**\n\n📦 **Capsule ID:** \`${storageResult.capsuleId}\`\n🔗 **IPFS Hash:** \`${storageResult.ipfsHash}\`\n🌐 **Gateway URL:** [View on IPFS](${storageResult.ipfsUrl})\n\n✅ Your knowledge is now permanently stored and ready for NFT minting!`,
+									timestamp: new Date(),
+								}
+								setMessages((prev) => [...prev, successMessage])
+							} else {
+								throw new Error(storageResult.error || 'Storage failed')
+							}
+						} catch (storageError) {
+							console.error('Storage error:', storageError)
+							const errorMsg: Message = {
+								id: `storage-error-${Date.now()}`,
+								role: 'agent',
+								content: `❌ Storage Error: ${
+									storageError instanceof Error
+										? storageError.message
+										: 'Failed to store capsule'
+								}`,
+								timestamp: new Date(),
+							}
+							setMessages((prev) => [...prev, errorMsg])
+						} finally {
+							setIsStoringCapsule(false)
+						}
+					} else {
+						setIsStoringCapsule(false)
+						console.error('Failed to extract capsule data from response')
+					}
+				}
 			} else {
 				throw new Error(data.error || 'Failed to get response from agents')
 			}
