@@ -1,7 +1,8 @@
 "use client";
 
 import { usePrivy } from "@privy-io/react-auth";
-import { BotIcon, PlusIcon, TrashIcon, WalletIcon } from "lucide-react";
+import { HomeIcon, PlusIcon, TrashIcon } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -55,10 +56,10 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar className="group-data-[side=left]:border-r-0">
-        <SidebarHeader>
+      <Sidebar className="group-data-[side=left]:border-r-0 bg-sidebar">
+        <SidebarHeader className="border-b border-sidebar-border">
           <SidebarMenu>
-            <div className="flex flex-row items-center justify-between">
+            <div className="flex flex-row items-center justify-between p-4">
               <Link
                 className="flex flex-row items-center gap-3"
                 href="/"
@@ -67,10 +68,14 @@ export function AppSidebar() {
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-lg flex items-center justify-center">
-                    <BotIcon className="w-5 h-5 text-primary-foreground" />
-                  </div>
-                  <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
+                  <Image
+                    src="/icon.png"
+                    alt="Neria AI"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6"
+                  />
+                  <span className="cursor-pointer rounded-md px-2 font-semibold text-lg text-sidebar-foreground hover:bg-sidebar-accent">
                     Neria AI
                   </span>
                 </div>
@@ -112,17 +117,17 @@ export function AppSidebar() {
             </div>
           </SidebarMenu>
         </SidebarHeader>
-        <SidebarContent>
-          <div className="flex flex-col gap-4 p-4">
+        <SidebarContent className="p-4">
+          <div className="flex flex-col gap-6">
             {/* Quick Actions */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h3 className="text-sm font-medium text-sidebar-foreground/70 px-2">
                 Quick Actions
               </h3>
               <div className="space-y-1">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   onClick={handleNewChat}
                 >
                   <PlusIcon className="w-4 h-4 mr-2" />
@@ -130,33 +135,14 @@ export function AppSidebar() {
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   onClick={() => router.push("/")}
                 >
-                  <BotIcon className="w-4 h-4 mr-2" />
+                  <HomeIcon className="w-4 h-4 mr-2" />
                   Home
                 </Button>
               </div>
             </div>
-
-            {/* Wallet Status */}
-            {user && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-sidebar-foreground/70 px-2">
-                  Wallet Status
-                </h3>
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-sidebar-accent">
-                  <WalletIcon className="w-4 h-4 text-green-500" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">Connected</p>
-                    <p className="text-xs text-sidebar-foreground/70 truncate">
-                      {user.wallet?.address?.slice(0, 6)}...
-                      {user.wallet?.address?.slice(-4)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Enhanced Agent Status */}
             <AgentStatusIndicator />

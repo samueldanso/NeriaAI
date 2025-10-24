@@ -291,15 +291,15 @@ export default function ChatPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="flex h-screen bg-background">
+        <div className="flex flex-col h-screen bg-background">
           {/* Messages Container */}
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
               {messages.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="inline-block p-6 bg-gradient-to-r from-primary to-primary/80 rounded-full mb-6">
+                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                  <div className="inline-block p-8 bg-muted rounded-full mb-8">
                     <svg
-                      className="w-12 h-12 text-primary-foreground"
+                      className="w-16 h-16 text-foreground"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -312,20 +312,20 @@ export default function ChatPage() {
                       />
                     </svg>
                   </div>
-                  <h1 className="text-3xl font-bold text-foreground mb-4">
+                  <h1 className="text-4xl font-bold text-foreground mb-4">
                     NERIA AI
                   </h1>
-                  <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+                  <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">
                     Ask Neria - Our 5-agent system will research, reason, and
                     validate your answer
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                    <button className="p-4 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow text-left border">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <button className="p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-left border hover:border-primary/20 hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                           <svg
-                            className="w-4 h-4 text-primary"
+                            className="w-5 h-5 text-primary"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -338,7 +338,7 @@ export default function ChatPage() {
                             />
                           </svg>
                         </div>
-                        <span className="font-medium text-card-foreground">
+                        <span className="font-semibold text-card-foreground text-lg">
                           Troubleshoot
                         </span>
                       </div>
@@ -347,11 +347,11 @@ export default function ChatPage() {
                       </p>
                     </button>
 
-                    <button className="p-4 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow text-left border">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-secondary/50 rounded-lg flex items-center justify-center">
+                    <button className="p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-left border hover:border-primary/20 hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-secondary/50 rounded-lg flex items-center justify-center">
                           <svg
-                            className="w-4 h-4 text-secondary-foreground"
+                            className="w-5 h-5 text-secondary-foreground"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -364,7 +364,7 @@ export default function ChatPage() {
                             />
                           </svg>
                         </div>
-                        <span className="font-medium text-card-foreground">
+                        <span className="font-semibold text-card-foreground text-lg">
                           NERIA 101
                         </span>
                       </div>
@@ -373,11 +373,11 @@ export default function ChatPage() {
                       </p>
                     </button>
 
-                    <button className="p-4 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow text-left border">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+                    <button className="p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-left border hover:border-primary/20 hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center">
                           <svg
-                            className="w-4 h-4 text-accent-foreground"
+                            className="w-5 h-5 text-accent-foreground"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -390,7 +390,7 @@ export default function ChatPage() {
                             />
                           </svg>
                         </div>
-                        <span className="font-medium text-card-foreground">
+                        <span className="font-semibold text-card-foreground text-lg">
                           Health
                         </span>
                       </div>
@@ -399,11 +399,11 @@ export default function ChatPage() {
                       </p>
                     </button>
 
-                    <button className="p-4 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow text-left border">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+                    <button className="p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-left border hover:border-primary/20 hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
                           <svg
-                            className="w-4 h-4 text-muted-foreground"
+                            className="w-5 h-5 text-muted-foreground"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -416,7 +416,7 @@ export default function ChatPage() {
                             />
                           </svg>
                         </div>
-                        <span className="font-medium text-card-foreground">
+                        <span className="font-semibold text-card-foreground text-lg">
                           Learn
                         </span>
                       </div>
@@ -425,11 +425,11 @@ export default function ChatPage() {
                       </p>
                     </button>
 
-                    <button className="p-4 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow text-left border">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-destructive/10 rounded-lg flex items-center justify-center">
+                    <button className="p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-left border hover:border-primary/20 hover:scale-[1.02]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-destructive/10 rounded-lg flex items-center justify-center">
                           <svg
-                            className="w-4 h-4 text-destructive"
+                            className="w-5 h-5 text-destructive"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -448,7 +448,7 @@ export default function ChatPage() {
                             />
                           </svg>
                         </div>
-                        <span className="font-medium text-card-foreground">
+                        <span className="font-semibold text-card-foreground text-lg">
                           Local
                         </span>
                       </div>
@@ -737,11 +737,11 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {/* Input Form - Perplexity Style */}
-          <div className="bg-card border-t border-border px-6 py-4">
+          {/* Input Form - Bottom positioned like in the design */}
+          <div className="bg-background border-t border-border px-6 py-4">
             <div className="max-w-4xl mx-auto">
               <form onSubmit={handleSubmit} className="relative">
-                <div className="flex items-center gap-2 px-4 py-3 bg-muted rounded-full">
+                <div className="flex items-center gap-2 px-4 py-3 bg-muted rounded-full border border-border">
                   <svg
                     className="w-5 h-5 text-muted-foreground"
                     fill="none"
@@ -759,14 +759,14 @@ export default function ChatPage() {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask anything... Our 5-agent system will research, reason, and validate your answer."
+                    placeholder="Ask anything... Our 5-agent system will research, reason, and validate your answer"
                     disabled={isLoading}
                     className="flex-1 bg-transparent text-foreground placeholder-muted-foreground focus:outline-none"
                   />
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      className="p-2 text-muted-foreground hover:text-foreground"
+                      className="p-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <svg
                         className="w-5 h-5"
@@ -784,7 +784,7 @@ export default function ChatPage() {
                     </button>
                     <button
                       type="button"
-                      className="p-2 text-muted-foreground hover:text-foreground"
+                      className="p-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <svg
                         className="w-5 h-5"

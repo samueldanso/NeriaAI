@@ -1,19 +1,7 @@
 "use client";
 
-import {
-  AlertCircle,
-  Brain,
-  CheckCircle,
-  Clock,
-  Package,
-  Search,
-  Shield,
-  Zap,
-} from "lucide-react";
+import { Brain, CheckCircle, Package, Search, Shield, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
 interface AgentStatus {
   id: string;
@@ -76,90 +64,54 @@ export function AgentStatusIndicator() {
     return () => clearInterval(interval);
   }, []);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "online":
-        return <CheckCircle className="w-3 h-3 text-green-500" />;
-      case "processing":
-        return <Clock className="w-3 h-3 text-blue-500 animate-pulse" />;
-      case "offline":
-        return <AlertCircle className="w-3 h-3 text-gray-400" />;
-      case "error":
-        return <AlertCircle className="w-3 h-3 text-red-500" />;
-      default:
-        return <Clock className="w-3 h-3 text-gray-400" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "online":
-        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
-      case "processing":
-        return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800";
-      case "offline":
-        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
-      case "error":
-        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
-    }
-  };
-
   const onlineCount = agents.filter(
     (agent) => agent.status === "online",
   ).length;
   const totalCount = agents.length;
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-primary" />
-            <CardTitle className="text-sm font-medium">Agent Status</CardTitle>
-          </div>
-          <Badge variant="outline" className="text-xs">
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium text-sidebar-foreground/70 px-2">
+        Agent Status
+      </h3>
+      <div className="bg-sidebar-accent rounded-lg p-3 border border-sidebar-border">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-sidebar-foreground">
             {onlineCount}/{totalCount} online
-          </Badge>
+          </span>
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
         </div>
-        <Progress
-          value={(onlineCount / totalCount) * 100}
-          className="h-1 mt-2"
-        />
-      </CardHeader>
-
-      <CardContent className="pt-0">
         <div className="space-y-2">
           {agents.map((agent) => (
             <div
               key={agent.id}
-              className="flex items-center gap-2 p-2 rounded-lg bg-muted/50"
+              className="flex items-center gap-3 p-2 rounded-lg bg-sidebar hover:bg-sidebar-accent transition-colors"
             >
-              <div className="flex-shrink-0">{agent.icon}</div>
+              <div className="flex-shrink-0 text-sidebar-foreground">
+                {agent.icon}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate">
-                    {agent.name}
+                  <span className="text-sm font-medium text-sidebar-foreground truncate">
+                    {agent.name.slice(0, 4)}...
                   </span>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${getStatusColor(agent.status)}`}
-                  >
-                    {agent.status}
-                  </Badge>
+                  <span className="text-xs text-green-500 font-medium">
+                    online
+                  </span>
                 </div>
                 {agent.processingTime && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-sidebar-foreground/70">
                     Avg: {Math.round(agent.processingTime)}ms
                   </p>
                 )}
               </div>
-              <div className="flex-shrink-0">{getStatusIcon(agent.status)}</div>
+              <div className="flex-shrink-0">
+                <CheckCircle className="w-3 h-3 text-green-500" />
+              </div>
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
