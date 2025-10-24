@@ -1,42 +1,18 @@
-import { type NextRequest, NextResponse } from 'next/server'
-import { uploadToIPFS } from '@/lib/pinata'
+import { NextResponse, type NextRequest } from "next/server";
+import { pinata } from "@/lib/pinata"
 
 export async function POST(request: NextRequest) {
-	try {
-		const { reasoning, metadata } = await request.json()
-
-		const result = await uploadToIPFS(
-			{
-				reasoning,
-				metadata,
-				timestamp: new Date().toISOString(),
-			},
-			`capsule-${Date.now()}`
-		)
-
-		if (result.success) {
-			return NextResponse.json({
-				success: true,
-				ipfsHash: result.ipfsHash,
-				url: result.url,
-				message: 'Content uploaded to IPFS',
-			})
-		} else {
-			return NextResponse.json(
-				{
-					success: false,
-					error: result.error,
-				},
-				{ status: 500 }
-			)
-		}
-	} catch (error) {
-		return NextResponse.json(
-			{
-				success: false,
-				error: 'IPFS upload failed',
-			},
-			{ status: 500 }
-		)
-	}
+  try {
+    const data = await request.formData();
+    const file: File | null = data.get("file") as unknown as File;
+    const { cid } = await pinata.upload.public.file(file)
+    const url = await pinata.gateways.public.convert(cid);
+    return NextResponse.json(url, { status: 200 });
+  } catch (e) {
+    console.log(e);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }

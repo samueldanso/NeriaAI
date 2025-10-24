@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
-// UAgent addresses from your existing agents
+// UAgent addresses
 const UAGENT_ADDRESSES = {
 	QUERY_ROUTER: 'agent1qwh5h2rcqy90hsa7cw4nx7zz2rt28dw7yrs234pgg7dyq8l0c9ykjy87hzu',
 	RESEARCH: 'agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm',
