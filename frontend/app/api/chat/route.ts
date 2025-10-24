@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
-// UAgent addresses
+// UAgent addresses (mailbox-enabled local agents)
 const UAGENT_ADDRESSES = {
 	QUERY_ROUTER: 'agent1qwh5h2rcqy90hsa7cw4nx7zz2rt28dw7yrs234pgg7dyq8l0c9ykjy87hzu',
 	RESEARCH: 'agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm',
@@ -17,7 +17,7 @@ async function getClient() {
 		const UAgentClient = UAgentClientModule.default || UAgentClientModule
 
 		clientInstance = new (UAgentClient as any)({
-			timeout: 60000,
+			timeout: 120000,
 			autoStartBridge: true,
 		})
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
 		const client = await getClient()
 
-		// Start with Query Router Agent (entry point)
+		// Query the router agent via bridge (will wait for final response)
 		const result = await client.query(UAGENT_ADDRESSES.QUERY_ROUTER, message)
 
 		if (result.success) {

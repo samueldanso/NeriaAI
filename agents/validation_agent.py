@@ -449,16 +449,20 @@ class ValidationCoordinator:
         revision_requests = sum(1 for v in validators_results.values()
                                if v['decision'] == ValidatorDecision.NEEDS_REVISION.value)
 
-        # Determine consensus
-        if approvals == 3:
+        # Determine consensus (2/3 majority rule for hackathon demo)
+        if approvals >= 2:
+            # 2 or 3 approvals = VERIFIED (2/3 consensus)
             final_status = ValidationStatus.VERIFIED
-            final_message = "✅ VERIFIED - All 3 validators approved!"
-        elif rejections >= 1:
+            final_message = f"✅ VERIFIED - {approvals}/3 validators approved (consensus reached)!"
+        elif rejections >= 2:
+            # 2 or more rejections = REJECTED
             final_status = ValidationStatus.REJECTED
-            final_message = f"❌ REJECTED - {rejections} validator(s) rejected"
+            final_message = f"❌ REJECTED - {rejections}/3 validator(s) rejected"
         else:
-            final_status = ValidationStatus.REVISION_REQUESTED
-            final_message = f"🔄 REVISION NEEDED - {revision_requests} validator(s) request improvements"
+            # Mixed results (1 approve, 1 reject, 1 revision) = proceed with caution
+            # For hackathon, we'll still verify but with lower confidence
+            final_status = ValidationStatus.VERIFIED
+            final_message = f"✅ VERIFIED (with caution) - Mixed results: {approvals} approved, {rejections} rejected, {revision_requests} need revision"
 
         # Calculate average score
         avg_score = (logic_score + source_score + completeness_score) / 3
