@@ -2,6 +2,7 @@
 
 import { usePrivy } from '@privy-io/react-auth'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -45,10 +46,38 @@ export default function ChatPage() {
 	const [currentAgentStep, setCurrentAgentStep] = useState(0)
 	const [isStoringCapsule, setIsStoringCapsule] = useState(false)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
-	const { user } = usePrivy()
+	const { user, ready, authenticated, login } = usePrivy()
+	const router = useRouter()
+
+	// Protect route - redirect if not authenticated
+	useEffect(() => {
+		if (ready && !authenticated) {
+			router.push('/')
+		}
+	}, [ready, authenticated, router])
 
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+	}
+
+	// Show loading while checking authentication
+	if (!ready || !authenticated) {
+		return (
+			<div className="flex items-center justify-center min-h-screen bg-background">
+				<div className="text-center">
+					<div className="inline-block p-8 bg-muted rounded-full mb-8">
+						<Image
+							src="/icon.png"
+							alt="Neria AI"
+							width={64}
+							height={64}
+							className="w-16 h-16 animate-pulse"
+						/>
+					</div>
+					<p className="text-muted-foreground">Loading...</p>
+				</div>
+			</div>
+		)
 	}
 
 	useEffect(() => {
@@ -210,8 +239,14 @@ export default function ChatPage() {
 					if (capsuleData) {
 						// Add minting mode (hybrid for now)
 						capsuleData.mintingMode = 'hybrid'
+
+						// Get wallet provider for NFT minting
+						// Privy embedded wallet or fallback to window.ethereum
+						capsuleData.walletProvider =
+							typeof window !== 'undefined' ? (window as any).ethereum : undefined
+
 						try {
-							// Process storage (Supabase + IPFS)
+							// Process storage (Supabase + IPFS + NFT Minting)
 							const storageResult = await processCapsuleStorage(capsuleData)
 
 							if (storageResult.success) {
