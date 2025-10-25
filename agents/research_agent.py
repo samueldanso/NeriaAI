@@ -1,19 +1,10 @@
 # research_agent.py
 """
-NeriaMind Research Agent
+NeriaAI Research Agent
 Gathers relevant context and sources for reasoning
 Searches existing Knowledge Capsules for reusability
 Falls back to web search if needed
 Provides structured context to Reasoning Agent
-
-Current: JSON-based capsule search (simple keyword matching)
-Future: Supabase pgvector for semantic similarity search
-
-Features:
-- JSON-based Knowledge Capsule search
-- Web search fallback (DuckDuckGo)
-- ASI:One intelligent summarization
-- Comprehensive verified reasoning chain database
 """
 
 import os

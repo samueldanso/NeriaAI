@@ -1,28 +1,8 @@
 # validation_agent.py
 """
-NeriaMind Multi-Agent Validation System
+NeriaAI Multi-Agent Validation System
 Coordinates 3 specialized sub-validators for automated reasoning validation
 
-Architecture:
-┌─────────────────────────────────────────────┐
-│        VALIDATION AGENT (Coordinator)        │
-├─────────────────────────────────────────────┤
-│  ├─ Logic Validator: Checks coherence ✅    │
-│  ├─ Source Validator: Verifies facts ✅     │
-│  └─ Completeness Validator: Checks answer ✅│
-│                                              │
-│  Consensus: 3/3 approved → VERIFIED ✅       │
-│  (If 1-2 reject → Revision requested 🔄)    │
-└─────────────────────────────────────────────┘
-
-Features:
-- Automated multi-agent validation (no human required)
-- Logic coherence checking
-- Source/fact verification
-- Completeness assessment
-- Consensus-based approval
-- Revision feedback loop to Reasoning Agent
-- Validation proof generation
 """
 
 import os

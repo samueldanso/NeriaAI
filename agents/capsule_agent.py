@@ -1,18 +1,8 @@
 # capsule_agent.py
 """
-NeriaMind Capsule Agent
+NeriaAI Capsule Agent
 Knowledge storage and retrieval system for verified Knowledge Capsules
 Creates, stores, and manages validated reasoning chains as JSON files
-
-Current Storage: JSON files (simple, fast, portable)
-Future: Supabase PostgreSQL with pgvector for semantic search
-
-Features:
-- JSON-based capsule storage
-- Capsule versioning and metadata
-- Usage tracking and analytics
-- Capsule retrieval and reusability
-- Ready for Supabase pgvector migration
 """
 
 
@@ -36,8 +26,6 @@ from uagents_core.contrib.protocols.chat import (
 )
 
 from dotenv import load_dotenv
-
-# Future: Supabase pgvector will be used for semantic search
 
 # Load environment variables
 load_dotenv()

@@ -1,6 +1,6 @@
 # query_router_agent.py
 """
-NeriaMind Query Router Agent
+NeriaAI Query Router Agent
 Central coordinator for processing incoming queries
 Classifies queries using ASI:One API and routes to appropriate specialized agents
 Coordinates multi-agent workflow for verified Knowledge Capsule creation
@@ -303,13 +303,8 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
 
             # Send welcome message with capabilities
             welcome_msg = create_text_message(
-                "Welcome to NeriaMind! I can help you with:\n"
-                "• Factual queries (Research)\n"
-                "• Complex reasoning (Detail and Complex )\n"
-                "• Knowledge validation (Human experts)\n"
-                "• Capsule lookup (Verified knowledge)\n\n"
-                "How can I assist you today?",
-                metadata={"capabilities": "research,reasoning,validation,capsule"}
+                "Welcome to Neria AI! I can help you turn your complex questions into verified knowledge capsules.",
+                metadata={"capabilities": "simple_factual, complex_reasoning, validation_request, capsule_lookup"}
             )
             await ctx.send(sender, welcome_msg)
 
@@ -369,17 +364,6 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
                 ctx.logger.info("🔍 Classifying query...")
                 query_type = await classify_query_with_asi_one(query_text, ctx)
                 ctx.logger.info(f"📊 Query classified as: {query_type.value}")
-
-                # DON'T send intermediate classification message - just route directly
-                # The user will get the final response from the specialized agent
-                # await ctx.send(
-                #     sender,
-                #     create_text_message(
-                #         f"✅ Query classified as: {query_type.value.replace('_', ' ').title()}\n"
-                #         f"🔄 Routing to appropriate agent...\n"
-                #         f"⏳ Please wait for the response..."
-                #     )
-                # )
 
                 # Route to appropriate agent
                 await route_to_agent(ctx, query_text, query_type, session_id, sender)

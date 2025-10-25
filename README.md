@@ -57,15 +57,16 @@ Built for researchers, developers, and professionals who need **verified AI reas
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      FRONTEND (Next.js 15)                   │
-│         Chat UI • Agent Status • Wallet Connect • Search     │
+│                    FRONTEND (Next.js 15)                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐│
+│  │   Chat UI       │  │  uagent-client  │  │  Storage     ││
+│  │                 │  │                 │  │  Operations  ││
+│  │ • User Input    │  │ • Direct Agent  │  │ • Supabase   ││
+│  │ • Real-time     │  │   Communication │  │ • Pinata     ││
+│  │ • Status Updates│  │ • Auto Bridge   │  │ • NFT Mint   ││
+│  └─────────────────┘  └─────────────────┘  └──────────────┘│
 └────────────────┬────────────────────────────────────────────┘
-                 │ REST API
-┌────────────────▼────────────────────────────────────────────┐
-│                  BACKEND (FastAPI + Python)                  │
-│           ASI:One API • IPFS Upload • Embeddings            │
-└────────────────┬────────────────────────────────────────────┘
-                 │
+                 │ Direct Communication (uagent-client)
 ┌────────────────▼────────────────────────────────────────────┐
 │              AGENT ORCHESTRATION LAYER                       │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
@@ -75,7 +76,7 @@ Built for researchers, developers, and professionals who need **verified AI reas
 │                                              │               │
 │  ┌──────────────┐                           ▼               │
 │  │Capsule Agent │ ←─────────────── ┌──────────────┐        │
-│  │  (Storage)   │                  │ Validation   │        │
+│  │  (Response)  │                  │ Validation   │        │
 │  └──────────────┘                  │Agent(3 types)│        │
 │                                     └──────────────┘        │
 │                                                              │
@@ -109,21 +110,21 @@ Built for researchers, developers, and professionals who need **verified AI reas
 ```
 USER: "How does React useMemo work?"
     ↓
-[1. QUERY ROUTER AGENT]
+[1. NERIA ROUTER AGENT]
     → Classifies as "technical question"
     → Routes to Research + Reasoning agents
     ↓
-[2. RESEARCH AGENT]
+[2. NERIA RESEARCH AGENT]
     → Searches existing Knowledge Capsules (vector search)
     → Searches React documentation
     → Returns: "Found 3 related capsules + official docs"
     ↓
-[3. REASONING AGENT]
+[3. NERIA REASONING AGENT]
     → Calls ASI:One API for answer generation
     → Structures response using MeTTa logic format
     → Output: Step-by-step reasoning chain
     ↓
-[4. VALIDATION AGENT] (coordinates 3 sub-agents)
+[4. NERIA VALIDATION AGENT] (coordinates 3 sub-agents)
     │
     ├─ LOGIC VALIDATOR: Checks reasoning coherence ✅
     ├─ SOURCE VALIDATOR: Verifies facts vs docs ✅
@@ -132,11 +133,15 @@ USER: "How does React useMemo work?"
     Consensus: 3/3 approved → VERIFIED ✅
     (If 1/2 rejects → Reasoning revised and resubmitted)
     ↓
-[5. CAPSULE AGENT]
-    → Uploads full reasoning to IPFS → Gets hash: QmX4z...
+[5. NERIA CAPSULE AGENT]
+    → Packages verified reasoning into structured response
+    → Returns data to frontend for storage operations
+    ↓
+[6. FRONTEND STORAGE OPERATIONS]
+    → Uploads full reasoning to IPFS (Pinata) → Gets hash: QmX4z...
     → Stores metadata + embeddings in Supabase
     → Mints NFT on Base L2 with IPFS hash
-    → Indexes for future discovery
+    → Indexes for semantic search via pgvector
     ↓
 USER RECEIVES:
     ✅ Verified answer with reasoning chain
@@ -149,7 +154,7 @@ USER RECEIVES:
 
 ## 🤖 Multi-Agent System
 
-### **1. Query Router Agent**
+### **1. Neria Router Agent**
 
 **Role:** Intent classification and routing
 **Tech:** uAgents + Chat Protocol
@@ -166,7 +171,7 @@ Capsule lookup → Capsule Agent
 
 ---
 
-### **2. Research Agent**
+### **2. Neria Research Agent**
 
 **Role:** Context gathering from existing knowledge and web
 **Tech:** Vector search + web scraping
@@ -180,7 +185,7 @@ Capsule lookup → Capsule Agent
 
 ---
 
-### **3. Reasoning Agent**
+### **3. Neria Reasoning Agent**
 
 **Role:** Generate structured reasoning using MeTTa
 **Tech:** ASI:One API + MeTTa logic formatting
@@ -218,7 +223,7 @@ Capsule lookup → Capsule Agent
 
 ---
 
-### **4. Validation Agent**
+### **4. Neria Validation Agent**
 
 **Role:** Coordinate multi-agent validation consensus
 **Tech:** Chat Protocol + ASI:One
@@ -236,20 +241,30 @@ Capsule lookup → Capsule Agent
 
 ---
 
-### **5. Capsule Agent**
+### **5. Neria Capsule Agent**
 
-**Role:** Package and store verified knowledge
-**Tech:** IPFS + Supabase + Smart Contracts
+**Role:** Package verified reasoning into structured responses (no storage)
+**Tech:** Chat Protocol (structured data only)
 **Address:** `agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246`
 
 **Process:**
 
-1. Upload full reasoning to IPFS
-2. Store metadata + embeddings in Supabase
-3. Mint NFT on Base L2 with IPFS hash
-4. Index for semantic search
+1. Receive validated reasoning + validation proof
+2. Package into structured format
+3. Return data to frontend via Chat Protocol
+4. Frontend handles: IPFS upload, Supabase insert, NFT minting, vector indexing
+
+**Note:** Agents no longer handle storage — frontend orchestrates all persistence operations.
 
 ---
+
+# Agent Addresses (from your running agents)
+
+Neria Router Agent=agent1qwh5h2rcqy90hsa7cw4nx7zz2rt28dw7yrs234pgg7dyq8l0c9ykjy87hzu
+Neria Research Agent=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm
+Neria Reasoning Agent=agent1qgfphu7jw45my7a3c0qpmnuvrf3e50fqkvyvst7mh8lvsuhv5n92zqwmeuz
+Neria Validation Agent=agent1qv64keg2jx4gsrsgk4s8r8q5pjahmaq4dpsa0whge0l3zf4glkzxw89wacm
+Neria Capsule Agent=agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246
 
 ## 🛠️ Tech Stack
 
@@ -259,8 +274,7 @@ Capsule lookup → Capsule Agent
 | **LLM API**             | ASI:One                                               |
 | **Logical Reasoning**   | SingularityNET's MeTTa                                |
 | **Agent Discovery**     | Agentverse                                            |
-| **Agent Communication** | Chat Protocol                                         |
-| **Backend**             | FastAPI + Uvicorn                                     |
+| **Agent Communication** | Chat Protocol + uagent-client                         |
 | **Offchain Database**   | Supabase (PostgreSQL)                                 |
 | **Vector Search**       | Supabase pgvector                                     |
 | **Onchain Storage**     | IPFS (via Pinata)                                     |
@@ -310,9 +324,14 @@ npm install
 # 4. Environment variables
 # Create .env file in root:
 echo "ASI_ONE_API_KEY=your-api-key" > .env
-echo "PINATA_API_KEY=your-pinata-key" >> .env
-echo "SUPABASE_URL=your-supabase-url" >> .env
-echo "SUPABASE_ANON_KEY=your-supabase-key" >> .env
+echo
+"QUERY_ROUTER_AGENT_ADDRESS=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm" >> .env
+"RESEARCH_AGENT_ADDRESS=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm" >> .env
+echo "REASONING_AGENT_ADDRESS=agent1qgfphu7jw45my7a3c0qpmnuvrf3e50fqkvyvst7mh8lvsuhv5n92zqwmeuz" >> .env
+echo "VALIDATION_AGENT_ADDRESS=agent1qv64keg2jx4gsrsgk4s8r8q5pjahmaq4dpsa0whge0l3zf4glkzxw89wacm" >> .env
+echo "CAPSULE_AGENT_ADDRESS=agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246" >> .env
+
+
 
 # 5. Run agents (in separate terminals)
 python agents/query_router_agent.py
@@ -321,16 +340,14 @@ python agents/reasoning_agent.py
 python agents/validation_agent.py
 python agents/capsule_agent.py
 
-# 6. Run backend
-cd backend
-python main.py
-
-# 7. Run frontend
-cd ../frontend
+# 6. Run frontend
+cd frontend
 npm run dev
 ```
 
 **Visit:** `http://localhost:3000` 🎉
+
+**Note:** Backend is no longer required. Frontend communicates directly with agents via `uagent-client`.
 
 ---
 
@@ -361,9 +378,10 @@ npx hardhat run scripts/deploy.js --network base-sepolia
 ### **🚧 Post-Hackathon**
 
 -   [ ] Mainnet deployment (Base)
--   [ ] Human validator marketplace
+-   [ ] Advanced agent validation models (fine-tuned validators)
 -   [ ] Mobile app
 -   [ ] Cross-domain knowledge graphs
+-   [ ] Community governance for validation rules
 
 ---
 

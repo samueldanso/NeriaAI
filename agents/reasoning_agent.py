@@ -1,6 +1,6 @@
 # reasoning_agent.py
 """
-NeriaMind Reasoning Agent
+NeriaAI Reasoning Agent
 Generates structured knowledge reasoning chains using MeTTa
 Creates transparent MeTTa logic graphs
 Shows reasoning steps clearly
