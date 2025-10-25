@@ -1,57 +1,58 @@
-# Sample Hardhat 3 Beta Project (`node:test` and `viem`)
+# NeriaAI Smart Contracts
 
-This project showcases a Hardhat 3 Beta project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.
-
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+This project contains the smart contracts for NeriaAI's Knowledge Capsule NFT system, built with Hardhat 3 and deployed on Base L2.
 
 ## Project Overview
 
-This example project includes:
+This project includes:
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using [`node:test`](nodejs.org/api/test.html), the new Node.js native test runner, and [`viem`](https://viem.sh/).
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+-   **KnowledgeCapsuleNFT.sol** - ERC-721 NFT contract for verified AI reasoning capsules
+-   **ReputationRegistry.sol** - ERC-4973 attestation contract for validator reputation
+-   **Hardhat 3** - Modern development environment with TypeScript and Viem
+-   **Base L2 Deployment** - Optimized for Base Sepolia and Base Mainnet
+-   **Comprehensive Testing** - Unit tests using Hardhat's native test runner
 
 ## Usage
 
 ### Running Tests
 
-To run all the tests in the project, execute the following command:
-
-```shell
+```bash
+# Run all tests
 npx hardhat test
+
+# Run specific test files
+npx hardhat test test/KnowledgeCapsuleNFT.test.ts
 ```
 
-You can also selectively run the Solidity or `node:test` tests:
+### Deploy to Base Sepolia
 
-```shell
-npx hardhat test solidity
-npx hardhat test nodejs
+```bash
+# Set your private key
+npx hardhat keystore set BASE_SEPOLIA_PRIVATE_KEY
+
+# Deploy the contract
+npx hardhat ignition deploy --network base-sepolia ignition/modules/DeployNeria.ts
 ```
 
-### Make a deployment to Sepolia
+### Deploy to Base Mainnet
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+```bash
+# Set your private key
+npx hardhat keystore set BASE_MAINNET_PRIVATE_KEY
 
-To run the deployment to a local chain:
-
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+# Deploy the contract
+npx hardhat ignition deploy --network base-mainnet ignition/modules/DeployNeria.ts
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+### Contract Functions
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+-   `mintCapsule(ipfsHash)` - Mint a new Knowledge Capsule NFT
+-   `getCapsuleData(tokenId)` - Get capsule data from blockchain
+-   `verifyCapsule(tokenId, validators)` - Verify a capsule (owner only)
+-   `totalSupply()` - Get total number of minted capsules
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+### Deployed Contract
 
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
-
-After setting the variable, you can run the deployment with the Sepolia network:
-
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
+**Address:** `0x7fb9aB53bFA8E923C0A1aEacbDEAd3d1bD8A0357`
+**Network:** Base Sepolia (Chain ID: 84532)
+**Explorer:** https://sepolia.basescan.org/address/0x7fb9aB53bFA8E923C0A1aEacbDEAd3d1bD8A0357

@@ -454,309 +454,327 @@ export default function ChatPage() {
 									</div>
 								</div>
 							) : (
-								messages.map((message) => {
-									// Render agent status differently
-									if (message.isAgentStatus && message.agentSteps) {
-										return (
-											<div key={message.id} className="flex justify-start">
-												<div className="max-w-[80%] rounded-2xl px-6 py-4 bg-card text-card-foreground shadow-md border">
-													<div className="flex items-start gap-3">
-														<div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-															<svg
-																className="w-5 h-5 text-primary-foreground animate-spin"
-																fill="none"
-																stroke="currentColor"
-																viewBox="0 0 24 24"
-															>
-																<path
-																	strokeLinecap="round"
-																	strokeLinejoin="round"
-																	strokeWidth={2}
-																	d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-																/>
-															</svg>
-														</div>
-														<div className="flex-1">
-															<div className="flex items-center gap-2 mb-3">
-																<span className="text-xs font-medium text-primary">
-																	Multi-Agent Processing
-																</span>
+								<>
+									{isLoading && (
+										<div className="flex justify-start">
+											<div className="max-w-[80%] rounded-2xl px-6 py-4 bg-card shadow-md border">
+												<div className="flex items-center gap-3">
+													<div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center p-1">
+														<Image
+															src="/icon.png"
+															alt="Neria AI"
+															width={20}
+															height={20}
+															className="w-5 h-5"
+														/>
+													</div>
+													<div className="flex gap-1">
+														<div
+															className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+															style={{ animationDelay: '0ms' }}
+														></div>
+														<div
+															className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+															style={{ animationDelay: '150ms' }}
+														></div>
+														<div
+															className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+															style={{ animationDelay: '300ms' }}
+														></div>
+													</div>
+													<span className="text-sm text-muted-foreground ml-2">
+														Agents are reasoning...
+													</span>
+												</div>
+											</div>
+										</div>
+									)}
+									{messages.map((message) => {
+										// Render agent status differently
+										if (message.isAgentStatus && message.agentSteps) {
+											return (
+												<div
+													key={message.id}
+													className="flex justify-start"
+												>
+													<div className="max-w-[80%] rounded-2xl px-6 py-4 bg-card text-card-foreground shadow-md border">
+														<div className="flex items-start gap-3">
+															<div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+																<svg
+																	className="w-5 h-5 text-primary-foreground animate-spin"
+																	fill="none"
+																	stroke="currentColor"
+																	viewBox="0 0 24 24"
+																>
+																	<path
+																		strokeLinecap="round"
+																		strokeLinejoin="round"
+																		strokeWidth={2}
+																		d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+																	/>
+																</svg>
 															</div>
-															<div className="space-y-2">
-																{message.agentSteps.map(
-																	(step, idx) => (
-																		<div
-																			key={idx}
-																			className={`flex items-center gap-3 text-sm transition-all duration-300 ${
-																				step.status ===
-																				'active'
-																					? 'scale-105'
-																					: ''
-																			}`}
-																		>
-																			<span
-																				className={`text-base ${
+															<div className="flex-1">
+																<div className="flex items-center gap-2 mb-3">
+																	<span className="text-xs font-medium text-primary">
+																		Multi-Agent Processing
+																	</span>
+																</div>
+																<div className="space-y-2">
+																	{message.agentSteps.map(
+																		(step, idx) => (
+																			<div
+																				key={idx}
+																				className={`flex items-center gap-3 text-sm transition-all duration-300 ${
 																					step.status ===
-																					'completed'
-																						? 'text-green-600 dark:text-green-400'
-																						: step.status ===
-																						  'active'
-																						? 'text-blue-600 dark:text-blue-400 animate-pulse'
-																						: 'text-muted-foreground/40'
+																					'active'
+																						? 'scale-105'
+																						: ''
 																				}`}
 																			>
-																				{step.status ===
-																				'completed'
-																					? '✓'
-																					: step.status ===
-																					  'active'
-																					? '⟳'
-																					: '○'}
-																			</span>
-																			<span className="text-lg">
-																				{step.icon}
-																			</span>
-																			<span
-																				className={
-																					step.status ===
+																				<span
+																					className={`text-base ${
+																						step.status ===
+																						'completed'
+																							? 'text-green-600 dark:text-green-400'
+																							: step.status ===
+																							  'active'
+																							? 'text-blue-600 dark:text-blue-400 animate-pulse'
+																							: 'text-muted-foreground/40'
+																					}`}
+																				>
+																					{step.status ===
 																					'completed'
-																						? 'text-green-600 dark:text-green-400'
+																						? '✓'
 																						: step.status ===
 																						  'active'
-																						? 'text-blue-600 dark:text-blue-400'
-																						: 'text-muted-foreground/60'
-																				}
-																			>
-																				{step.message}
+																						? '⟳'
+																						: '○'}
+																				</span>
+																				<span className="text-lg">
+																					{step.icon}
+																				</span>
+																				<span
+																					className={
+																						step.status ===
+																						'completed'
+																							? 'text-green-600 dark:text-green-400'
+																							: step.status ===
+																							  'active'
+																							? 'text-blue-600 dark:text-blue-400'
+																							: 'text-muted-foreground/60'
+																					}
+																				>
+																					{step.message}
+																				</span>
+																			</div>
+																		)
+																	)}
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											)
+										}
+
+										// Regular message rendering
+										return (
+											<div
+												key={message.id}
+												className={`flex ${
+													message.role === 'user'
+														? 'justify-end'
+														: 'justify-start'
+												}`}
+											>
+												<div
+													className={`max-w-[80%] rounded-2xl px-6 py-4 ${
+														message.role === 'user'
+															? 'bg-primary text-primary-foreground'
+															: 'bg-card text-card-foreground shadow-md border'
+													}`}
+												>
+													<div className="flex items-start gap-3">
+														{message.role === 'assistant' && (
+															<div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center p-1">
+																<Image
+																	src="/icon.png"
+																	alt="Neria AI"
+																	width={20}
+																	height={20}
+																	className="w-5 h-5"
+																/>
+															</div>
+														)}
+														<div className="flex-1">
+															{message.role === 'assistant' ? (
+																<div>
+																	{message.agentName && (
+																		<div className="flex items-center gap-2 mb-2">
+																			<span className="text-xs font-medium text-primary">
+																				{message.agentName}
+																			</span>
+																			<span className="text-xs text-muted-foreground">
+																				{message.timestamp.toLocaleTimeString()}
 																			</span>
 																		</div>
-																	)
-																)}
-															</div>
+																	)}
+																	<div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-headings:my-3 prose-img:rounded-lg prose-img:shadow-md">
+																		<ReactMarkdown
+																			remarkPlugins={[
+																				remarkGfm,
+																			]}
+																			components={{
+																				img: ({
+																					node,
+																					...props
+																				}) => (
+																					<img
+																						{...props}
+																						className="max-w-full h-auto rounded-lg shadow-md my-4"
+																						loading="lazy"
+																						alt={
+																							props.alt ||
+																							'Image'
+																						}
+																					/>
+																				),
+																				a: ({
+																					node,
+																					...props
+																				}) => (
+																					<a
+																						{...props}
+																						target="_blank"
+																						rel="noopener noreferrer"
+																						className="text-blue-500 hover:text-blue-600 underline"
+																					/>
+																				),
+																				code: ({
+																					node,
+																					className,
+																					children,
+																					...props
+																				}) => {
+																					const isInline =
+																						!className?.includes(
+																							'language-'
+																						)
+																					return isInline ? (
+																						<code
+																							className="bg-muted px-1.5 py-0.5 rounded text-sm"
+																							{...props}
+																						>
+																							{
+																								children
+																							}
+																						</code>
+																					) : (
+																						<code
+																							className={`block bg-muted p-3 rounded-lg overflow-x-auto ${
+																								className ||
+																								''
+																							}`}
+																							{...props}
+																						>
+																							{
+																								children
+																							}
+																						</code>
+																					)
+																				},
+																			}}
+																		>
+																			{message.content}
+																		</ReactMarkdown>
+																	</div>
+																	<EnhancedReasoningDisplay
+																		reasoning={
+																			message.reasoning
+																		}
+																		validation={
+																			message.validation
+																		}
+																		className="mt-4"
+																	/>
+																	{message.requiresManualMinting &&
+																		message.capsuleId &&
+																		message.ipfsHash && (
+																			<div className="mt-4 flex justify-start">
+																				<MintNFTButton
+																					capsuleId={
+																						message.capsuleId
+																					}
+																					capsuleTitle={
+																						message.content.slice(
+																							0,
+																							50
+																						) + '...'
+																					}
+																					ipfsHash={
+																						message.ipfsHash
+																					}
+																					confidence={
+																						0.75
+																					} // Default confidence for manual minting
+																					mode="manual"
+																					onMintSuccess={(
+																						tokenId,
+																						txHash
+																					) => {
+																						// Update the message to show success
+																						setMessages(
+																							(
+																								prev
+																							) =>
+																								prev.map(
+																									(
+																										msg
+																									) =>
+																										msg.id ===
+																										message.id
+																											? {
+																													...msg,
+																													content:
+																														msg.content.replace(
+																															'Ready for NFT Minting',
+																															`NFT Minted Successfully! Token ID: ${tokenId}`
+																														),
+																													requiresManualMinting:
+																														false,
+																													tokenId,
+																													nftTxHash:
+																														txHash,
+																											  }
+																											: msg
+																								)
+																						)
+																					}}
+																					onMintError={(
+																						error
+																					) => {
+																						console.error(
+																							'Minting error:',
+																							error
+																						)
+																					}}
+																				/>
+																			</div>
+																		)}
+																</div>
+															) : (
+																<p className="whitespace-pre-wrap break-words">
+																	{message.content}
+																</p>
+															)}
 														</div>
 													</div>
 												</div>
 											</div>
 										)
-									}
-
-									// Regular message rendering
-									return (
-										<div
-											key={message.id}
-											className={`flex ${
-												message.role === 'user'
-													? 'justify-end'
-													: 'justify-start'
-											}`}
-										>
-											<div
-												className={`max-w-[80%] rounded-2xl px-6 py-4 ${
-													message.role === 'user'
-														? 'bg-primary text-primary-foreground'
-														: 'bg-card text-card-foreground shadow-md border'
-												}`}
-											>
-												<div className="flex items-start gap-3">
-													{message.role === 'assistant' && (
-														<div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center p-1">
-															<Image
-																src="/icon.png"
-																alt="Neria AI"
-																width={20}
-																height={20}
-																className="w-5 h-5"
-															/>
-														</div>
-													)}
-													<div className="flex-1">
-														{message.role === 'assistant' ? (
-															<div>
-																{message.agentName && (
-																	<div className="flex items-center gap-2 mb-2">
-																		<span className="text-xs font-medium text-primary">
-																			{message.agentName}
-																		</span>
-																		<span className="text-xs text-muted-foreground">
-																			{message.timestamp.toLocaleTimeString()}
-																		</span>
-																	</div>
-																)}
-																<div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-headings:my-3 prose-img:rounded-lg prose-img:shadow-md">
-																	<ReactMarkdown
-																		remarkPlugins={[remarkGfm]}
-																		components={{
-																			img: ({
-																				node,
-																				...props
-																			}) => (
-																				<img
-																					{...props}
-																					className="max-w-full h-auto rounded-lg shadow-md my-4"
-																					loading="lazy"
-																					alt={
-																						props.alt ||
-																						'Image'
-																					}
-																				/>
-																			),
-																			a: ({
-																				node,
-																				...props
-																			}) => (
-																				<a
-																					{...props}
-																					target="_blank"
-																					rel="noopener noreferrer"
-																					className="text-blue-500 hover:text-blue-600 underline"
-																				/>
-																			),
-																			code: ({
-																				node,
-																				className,
-																				children,
-																				...props
-																			}) => {
-																				const isInline =
-																					!className?.includes(
-																						'language-'
-																					)
-																				return isInline ? (
-																					<code
-																						className="bg-muted px-1.5 py-0.5 rounded text-sm"
-																						{...props}
-																					>
-																						{children}
-																					</code>
-																				) : (
-																					<code
-																						className={`block bg-muted p-3 rounded-lg overflow-x-auto ${
-																							className ||
-																							''
-																						}`}
-																						{...props}
-																					>
-																						{children}
-																					</code>
-																				)
-																			},
-																		}}
-																	>
-																		{message.content}
-																	</ReactMarkdown>
-																</div>
-																<EnhancedReasoningDisplay
-																	reasoning={message.reasoning}
-																	validation={message.validation}
-																	className="mt-4"
-																/>
-																{message.requiresManualMinting &&
-																	message.capsuleId &&
-																	message.ipfsHash && (
-																		<div className="mt-4 flex justify-start">
-																			<MintNFTButton
-																				capsuleId={
-																					message.capsuleId
-																				}
-																				capsuleTitle={
-																					message.content.slice(
-																						0,
-																						50
-																					) + '...'
-																				}
-																				ipfsHash={
-																					message.ipfsHash
-																				}
-																				confidence={0.75} // Default confidence for manual minting
-																				mode="manual"
-																				onMintSuccess={(
-																					tokenId,
-																					txHash
-																				) => {
-																					// Update the message to show success
-																					setMessages(
-																						(prev) =>
-																							prev.map(
-																								(
-																									msg
-																								) =>
-																									msg.id ===
-																									message.id
-																										? {
-																												...msg,
-																												content:
-																													msg.content.replace(
-																														'Ready for NFT Minting',
-																														`NFT Minted Successfully! Token ID: ${tokenId}`
-																													),
-																												requiresManualMinting:
-																													false,
-																												tokenId,
-																												nftTxHash:
-																													txHash,
-																										  }
-																										: msg
-																							)
-																					)
-																				}}
-																				onMintError={(
-																					error
-																				) => {
-																					console.error(
-																						'Minting error:',
-																						error
-																					)
-																				}}
-																			/>
-																		</div>
-																	)}
-															</div>
-														) : (
-															<p className="whitespace-pre-wrap break-words">
-																{message.content}
-															</p>
-														)}
-													</div>
-												</div>
-											</div>
-										</div>
-									)
-								})
-							)}
-
-							{isLoading && (
-								<div className="flex justify-start">
-									<div className="max-w-[80%] rounded-2xl px-6 py-4 bg-card shadow-md border">
-										<div className="flex items-center gap-3">
-											<div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center p-1">
-												<Image
-													src="/icon.png"
-													alt="Neria AI"
-													width={20}
-													height={20}
-													className="w-5 h-5"
-												/>
-											</div>
-											<div className="flex gap-1">
-												<div
-													className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-													style={{ animationDelay: '0ms' }}
-												></div>
-												<div
-													className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-													style={{ animationDelay: '150ms' }}
-												></div>
-												<div
-													className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-													style={{ animationDelay: '300ms' }}
-												></div>
-											</div>
-											<span className="text-sm text-muted-foreground ml-2">
-												Agents are reasoning...
-											</span>
-										</div>
-									</div>
-								</div>
+									})}
+								</>
 							)}
 							<div ref={messagesEndRef} />
 						</div>

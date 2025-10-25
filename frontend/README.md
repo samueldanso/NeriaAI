@@ -21,10 +21,17 @@
     cp .env-example .env
     ```
 
-    Fill in your environment variables:
+    Fill in your environment variables in `.env.local`:
 
-    - `NEXT_PUBLIC_PRIVY_APP_ID`: Get from [Privy](https://dashboard.privy.io/)
-    - `NEXT_PUBLIC_CHAIN_ID`: Use `11155111` for Sepolia or `1` for Mainnet
+    **Required Variables:**
+
+    - `NEXT_PUBLIC_PRIVY_APP_ID`: Get from [Privy Dashboard](https://dashboard.privy.io/)
+    - `NEXT_PUBLIC_CHAIN_ID`: Use `84532` for Base Sepolia or `8453` for Base Mainnet
+    - `NEXT_PUBLIC_CONTRACT_ADDRESS`: `0x7fb9aB53bFA8E923C0A1aEacbDEAd3d1bD8A0357`
+    - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key
+    - `PINATA_JWT`: Your Pinata JWT token
+    - `NEXT_PUBLIC_GATEWAY_URL`: Your Pinata gateway URL
 
 4. **Start development server**
 

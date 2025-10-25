@@ -4,7 +4,7 @@ A decentralized human-AI reasoning platform that transforms AI outputs into perm
 
 **ETHOnline 2025 | ASI Alliance Track | Hardhat Track**
 
-[🎥 **Watch Video Demo**]() | [📊 **View Pitch Deck**]() | [🌐 **Live Demo**](https://neria-ai.vercel.app)
+[🎥 **Watch Video Demo**]() | [📊 **View Pitch Deck**](https://www.canva.com/design/DAG2knGSeuE/TAazcD4kzxgydXKQehTC1A/edit) | [🌐 **Live Demo**](https://neria-ai.vercel.app)
 
 ---
 
@@ -260,11 +260,11 @@ Capsule lookup → Capsule Agent
 
 # Agent Addresses (from your running agents)
 
-Neria Router Agent=agent1qwh5h2rcqy90hsa7cw4nx7zz2rt28dw7yrs234pgg7dyq8l0c9ykjy87hzu
-Neria Research Agent=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm
-Neria Reasoning Agent=agent1qgfphu7jw45my7a3c0qpmnuvrf3e50fqkvyvst7mh8lvsuhv5n92zqwmeuz
-Neria Validation Agent=agent1qv64keg2jx4gsrsgk4s8r8q5pjahmaq4dpsa0whge0l3zf4glkzxw89wacm
-Neria Capsule Agent=agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246
+-   Neria Router Agent=agent1qwh5h2rcqy90hsa7cw4nx7zz2rt28dw7yrs234pgg7dyq8l0c9ykjy87hzu
+-   Neria Research Agent=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm
+-   Neria Reasoning Agent=agent1qgfphu7jw45my7a3c0qpmnuvrf3e50fqkvyvst7mh8lvsuhv5n92zqwmeuz
+-   Neria Validation Agent=agent1qv64keg2jx4gsrsgk4s8r8q5pjahmaq4dpsa0whge0l3zf4glkzxw89wacm
+-   Neria Capsule Agent=agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246
 
 ## 🛠️ Tech Stack
 
@@ -324,30 +324,36 @@ npm install
 # 4. Environment variables
 # Create .env file in root:
 echo "ASI_ONE_API_KEY=your-api-key" > .env
-echo
-"QUERY_ROUTER_AGENT_ADDRESS=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm" >> .env
-"RESEARCH_AGENT_ADDRESS=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm" >> .env
+echo "QUERY_ROUTER_AGENT_ADDRESS=agent1qwh5h2rcqy90hsa7cw4nx7zz2rt28dw7yrs234pgg7dyq8l0c9ykjy87hzu" >> .env
+echo "RESEARCH_AGENT_ADDRESS=agent1qgfcn08vzxtkn9l6qyu56g8vxex5qz4l8u6umgpdlqa8fwuau6cx6vmeklm" >> .env
 echo "REASONING_AGENT_ADDRESS=agent1qgfphu7jw45my7a3c0qpmnuvrf3e50fqkvyvst7mh8lvsuhv5n92zqwmeuz" >> .env
 echo "VALIDATION_AGENT_ADDRESS=agent1qv64keg2jx4gsrsgk4s8r8q5pjahmaq4dpsa0whge0l3zf4glkzxw89wacm" >> .env
 echo "CAPSULE_AGENT_ADDRESS=agent1qt78fvx2utyw0qdnld73d9vn3rca8xcfkec24vtkqzu0xrdlsnkqgul8246" >> .env
 
+# 5. Frontend environment setup
+cd frontend
+cp .env-example .env
+# Edit .env.local with your values:
+# - NEXT_PUBLIC_PRIVY_APP_ID (from Privy dashboard)
+# - NEXT_PUBLIC_SUPABASE_URL & NEXT_PUBLIC_SUPABASE_ANON_KEY
+# - PINATA_JWT & NEXT_PUBLIC_GATEWAY_URL
+# - NEXT_PUBLIC_CONTRACT_ADDRESS=0x7fb9aB53bFA8E923C0A1aEacbDEAd3d1bD8A0357
 
 
-# 5. Run agents (in separate terminals)
+
+# 6. Run agents (in separate terminals)
 python agents/query_router_agent.py
 python agents/research_agent.py
 python agents/reasoning_agent.py
 python agents/validation_agent.py
 python agents/capsule_agent.py
 
-# 6. Run frontend
+# 7. Run frontend
 cd frontend
 npm run dev
 ```
 
 **Visit:** `http://localhost:3000` 🎉
-
-**Note:** Backend is no longer required. Frontend communicates directly with agents via `uagent-client`.
 
 ---
 
@@ -356,13 +362,13 @@ npm run dev
 ```bash
 cd contracts
 npx hardhat compile
-npx hardhat run scripts/deploy.js --network base-sepolia
+npx hardhat ignition deploy --network base-sepolia ignition/modules/DeployNeria.ts
 ```
 
 **Deployed Contracts (Base Sepolia):**
 
--   KnowledgeCapsuleNFT: `0x...` (to be added)
--   ReputationRegistry: `0x...` (to be added)
+-   KnowledgeCapsuleNFT: `0x7fb9aB53bFA8E923C0A1aEacbDEAd3d1bD8A0357`
+-   Explorer: https://sepolia.basescan.org/address/0x7fb9aB53bFA8E923C0A1aEacbDEAd3d1bD8A0357
 
 ---
 
