@@ -45,7 +45,7 @@ ROUTER_SEED = os.getenv("ROUTER_SEED", "query_router_secret_seed")
 
 # ASI:One API configuration
 ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY", "")
-ASI_ONE_API_URL = os.getenv("ASI_ONE_API_URL", "https://api.asi.one/v1")
+ASI_ONE_API_URL = os.getenv("ASI_ONE_API_URL", "https://api.asi1.ai/v1")
 
 # Specialized agent addresses (will be populated on startup)
 AGENT_ADDRESSES = {

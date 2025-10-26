@@ -10,22 +10,22 @@ from typing import Dict, List, Tuple, Optional
 from .reasonrag import GeneralRAG
 
 
-def get_asi_one_response(prompt: str, api_key: str, api_url: str = "https://api.asi.one/v1") -> Optional[str]:
+def get_asi_one_response(prompt: str, api_key: str, api_url: str = "https://api.asi1.ai/v1") -> Optional[str]:
     """
     Get response from ASI:One API.
-    
+
     Args:
         prompt: The prompt to send
         api_key: ASI:One API key
         api_url: API endpoint URL
-        
+
     Returns:
         Response text or None if error
     """
     if not api_key:
         print("⚠️  ASI:One API key not configured")
         return None
-    
+
     try:
         response = requests.post(
             f"{api_url}/chat/completions",
@@ -40,7 +40,7 @@ def get_asi_one_response(prompt: str, api_key: str, api_url: str = "https://api.
             },
             timeout=30
         )
-        
+
         if response.status_code == 200:
             result = response.json()
             if "choices" in result and len(result["choices"]) > 0:
@@ -48,7 +48,7 @@ def get_asi_one_response(prompt: str, api_key: str, api_url: str = "https://api.
         else:
             print(f"⚠️  ASI:One API error: {response.status_code}")
             return None
-            
+
     except Exception as e:
         print(f"❌ Error calling ASI:One API: {e}")
         return None
@@ -57,11 +57,11 @@ def get_asi_one_response(prompt: str, api_key: str, api_url: str = "https://api.
 def classify_reasoning_type(query: str, api_key: str) -> str:
     """
     Classify the type of reasoning required for the query.
-    
+
     Args:
         query: User query
         api_key: ASI:One API key
-        
+
     Returns:
         Reasoning type (deductive, inductive, abductive, comparative, causal)
     """
@@ -77,15 +77,15 @@ Query: {query}
 
 Respond with ONLY the reasoning type (one word).
 """
-    
+
     result = get_asi_one_response(classification_prompt, api_key)
-    
+
     if result:
         reasoning_type = result.strip().lower()
         valid_types = ["deductive", "inductive", "abductive", "comparative", "causal"]
         if reasoning_type in valid_types:
             return reasoning_type
-    
+
     # Default fallback
     query_lower = query.lower()
     if any(word in query_lower for word in ["why", "cause", "because", "reason"]):
@@ -101,11 +101,11 @@ Respond with ONLY the reasoning type (one word).
 def extract_key_concepts(query: str, api_key: str) -> List[str]:
     """
     Extract key concepts from the query.
-    
+
     Args:
         query: User query
         api_key: ASI:One API key
-        
+
     Returns:
         List of key concepts
     """
@@ -117,23 +117,23 @@ Query: {query}
 
 Respond with ONLY the comma-separated concepts.
 """
-    
+
     result = get_asi_one_response(extraction_prompt, api_key)
-    
+
     if result:
         concepts = [c.strip() for c in result.split(",")]
         return [c for c in concepts if c]
-    
+
     # Fallback: extract capitalized words and technical terms
     words = query.split()
     concepts = []
     for word in words:
         word_clean = word.strip(".,!?()[]{}\"'")
-        if (word_clean and len(word_clean) > 3 and 
-            (word_clean[0].isupper() or "_" in word_clean or word_clean.lower() in 
+        if (word_clean and len(word_clean) > 3 and
+            (word_clean[0].isupper() or "_" in word_clean or word_clean.lower() in
              ["neural", "network", "learning", "training", "model", "algorithm", "data"])):
             concepts.append(word_clean)
-    
+
     return concepts[:5]  # Limit to top 5
 
 
@@ -147,7 +147,7 @@ def generate_reasoning_chain(
 ) -> Dict[str, any]:
     """
     Generate a structured reasoning chain using MeTTa knowledge and LLM.
-    
+
     Args:
         query: User query
         reasoning_type: Type of reasoning required
@@ -155,7 +155,7 @@ def generate_reasoning_chain(
         rag: ReasoningRAG instance
         context: Optional context from Research Agent
         api_key: ASI:One API key
-        
+
     Returns:
         Dictionary containing reasoning chain and metadata
     """
@@ -163,24 +163,24 @@ def generate_reasoning_chain(
     patterns = rag.query_reasoning_pattern(reasoning_type)
     template = rag.query_template(f"{reasoning_type}_explanation") or rag.query_template("why_explanation")
     validation_criteria = rag.query_validation_criteria()
-    
+
     # Gather domain-specific knowledge
     domain_knowledge = []
     for concept in concepts:
         rules = rag.query_domain_rule(concept)
         domain_knowledge.extend(rules)
-        
+
         # Query causal relationships
         causes = rag.query_causes(concept)
         if causes:
             domain_knowledge.append(f"{concept} causes: {', '.join(causes)}")
-    
+
     # Search for related knowledge
     related_knowledge = []
     for concept in concepts:
         matches = rag.search_knowledge(concept)
         related_knowledge.extend(matches)
-    
+
     # Build reasoning prompt with MeTTa knowledge
     reasoning_prompt = f"""
 Generate a transparent, step-by-step reasoning chain to answer this query.
@@ -213,10 +213,10 @@ Please provide:
 
 Format your response as clear, auditable reasoning that a human expert can validate.
 """
-    
+
     # Get LLM response
     reasoning_response = get_asi_one_response(reasoning_prompt, api_key)
-    
+
     if not reasoning_response:
         # Fallback response
         reasoning_response = f"""
@@ -234,7 +234,7 @@ Unable to generate full reasoning due to API limitations. Query requires {reason
 
 **Confidence:** 0.5 (Limited by API availability)
 """
-    
+
     # Parse confidence from response (look for pattern)
     confidence = 0.7  # Default
     if "confidence:" in reasoning_response.lower():
@@ -244,7 +244,7 @@ Unable to generate full reasoning due to API limitations. Query requires {reason
             confidence = float(conf_value.strip("()"))
         except:
             pass
-    
+
     # Build reasoning chain structure
     chain = {
         "query": query,
@@ -265,17 +265,17 @@ Unable to generate full reasoning due to API limitations. Query requires {reason
             "patterns_found": len(patterns) > 0
         }
     }
-    
+
     return chain
 
 
 def format_reasoning_for_validation(chain: Dict[str, any]) -> str:
     """
     Format reasoning chain for human expert validation.
-    
+
     Args:
         chain: Reasoning chain dictionary
-        
+
     Returns:
         Formatted text for validation
     """
@@ -308,6 +308,5 @@ Please review this reasoning chain and provide feedback:
 3. Is the conclusion well-supported?
 4. Any corrections or improvements needed?
 """
-    
-    return formatted
 
+    return formatted

@@ -39,7 +39,7 @@ RESEARCH_SEED = os.getenv("RESEARCH_SEED", "research_agent_secret_seed")
 
 # ASI:One API configuration (for intelligent summarization)
 ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY", "")
-ASI_ONE_API_URL = os.getenv("ASI_ONE_API_URL", "https://api.asi1.ai/v1")  # Correct ASI:One endpoint
+ASI_ONE_API_URL = os.getenv("ASI_ONE_API_URL", "https://api.asi1.ai/v1")  # ASI:One endpoint
 ASI_ONE_MODEL = os.getenv("ASI_ONE_MODEL", "asi1-mini")  # ASI:One model (asi1-mini, asi1-fast, asi1-extended, asi1-agentic, asi1-graph)
 ASI_ONE_TIMEOUT = int(os.getenv("ASI_ONE_TIMEOUT", "30"))  # API timeout in seconds
 ENABLE_ASI_ONE_SUMMARY = os.getenv("ENABLE_ASI_ONE_SUMMARY", "true").lower() == "true"
