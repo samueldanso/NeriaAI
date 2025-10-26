@@ -4,7 +4,7 @@ A decentralized human-AI reasoning platform that transforms AI outputs into perm
 
 **ETHOnline 2025 | ASI Alliance Track | Hardhat Track**
 
-[🎥 **Watch Video Demo**]() | [📊 **View Pitch Deck**](https://www.canva.com/design/DAG2knGSeuE/TAazcD4kzxgydXKQehTC1A/edit) | [🌐 **Live Demo**](https://neria-ai.vercel.app)
+[🎥 **Watch Video Demo**](https://drive.google.com/file/d/1OJop4sYLSIDpwXUZcWo8r6ppuFcwZH9K/view?usp=sharing) | [📊 **View Pitch Deck**](https://www.canva.com/design/DAG2knGSeuE/TAazcD4kzxgydXKQehTC1A/edit) | [🌐 **Live Demo**](https://neria-ai.vercel.app)
 
 ---
 
